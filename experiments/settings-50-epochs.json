@@ -1,0 +1,85 @@
+{
+    "model": {
+        "name": "yolov7-tiny",
+        "pretrained": false,
+        "freeze": false,
+		"weight_path" : false,
+		"weight_dataset": "CropOrWeed2",
+		"load_anchors" : false
+    },
+    "optimizer": {
+        "name": "SGD",
+        "learning_rate": 0.005,
+        "weight_decay": 0.0005,
+        "lr_scheduler": "OneCycleLR"
+    },
+    "lr_scheduler": {
+        "warmup_epochs": 1,
+        "warmup_multiplier": 0.2,
+        "milestones": [
+            40,
+            50
+        ],
+        "milestone_multiplier": 0.1
+    },
+    "lr_onecycle": {
+        "pct_start": 0.3,
+        "base_momentum": 0.8,
+        "max_momentum": 0.937,
+        "div_factor": 30.0,
+        "final_div_factor": 2000.0
+    },
+    "loss": {
+        "box_loss_weight": 0.05,
+        "cls_loss_weight": 0.5,
+        "obj_loss_weight": 1.0,
+        "ota_loss": true
+    },
+    "dataset": {
+        "name": "CropOrWeed2",
+        "batch_size": 24,
+		"eval_batch_scale" : 5,
+		"num_workers" : 14,
+        "accumulate_batch_size": 1,
+        "use_extra_class": 0,
+        "image_size": [
+            640,
+            640
+        ],
+        "stack2_images": true,
+		"normalize_images" : false,
+        "seed": 4222
+    },
+    "mAP": {
+        "min_confidence": 0.02,
+        "nms_threshold": 0.02,
+        "iou_threshold": 0.7,
+        "max_detections": 150
+    },
+    "trainer": {
+        "max_epochs": 50,
+        "strategy": "auto",
+		"accumulate_grad_batches": 1,
+		"check_val_every_n_epoch" : 1, 
+		"val_check_interval" : false,
+		"ckpt_path" : false,
+		"disable_val_sanity_checks" : false,
+		"deepspeed_config" : {
+			"zero_allow_untested_optimizer": true,
+			"zero_force_ds_cpu_optimizer": false,
+			"train_batch_size" : "batch_size",
+			"train_micro_batch_size_per_gpu" : "batch_size",
+			"zero_optimization": {
+				"stage": 2,
+				"offload_optimizer": true,
+				"allgather_bucket_size": 5e8,
+				"reduce_bucket_size": 5e8,
+				"offload_optimizer": {
+					"device": "cpu",
+					"pin_memory": true
+				}
+			}
+        },
+		"precision" : 32
+    }
+}

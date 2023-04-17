@@ -1,0 +1,136 @@
+TestTrain
+Settings from ./sbatch-setups/w6-crops9-deep3-40epochs-lr0.05-from40-to10000-over0.3.json
+[rank: 0] Global seed set to 4222
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/callbacks/model_checkpoint.py:612: UserWarning: Checkpoint directory /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models exists and is not empty.
+  rank_zero_warn(f"Checkpoint directory {dirpath} exists and is not empty.")
+Restoring states from the checkpoint path at /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models/CropsOrWeed9_1280px_yolov7-w6_epoch=7_lr=_batch=8_val_loss=1.865_map=0.216.ckpt
+loading torch...imported torchimported lightning and albumentations. Importing model framework...
+Frameworks
+Namespace(settings='./sbatch-setups/w6-crops9-deep3-40epochs-lr0.05-from40-to10000-over0.3.json', ckpt_path=None, no_log=True)
+Using customized paths: {'bboxes': '/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/data/', 'images': '/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/data/'}
+{'dataset': {'accumulate_batch_size': 1,
+             'batch_size': 16,
+             'eval_batch_scale': 3,
+             'image_size': [1280, 1280],
+             'name': 'CropsOrWeed9',
+             'num_workers': 5,
+             'seed': 4222,
+             'stack2_images': True,
+             'use_extra_class': 0},
+ 'loss': {'box_loss_weight': 0.05,
+          'cls_loss_weight': 0.5,
+          'obj_loss_weight': 1.0,
+          'ota_loss': True},
+ 'lr_onecycle': {'base_momentum': 0.8,
+                 'div_factor': 40.0,
+                 'final_div_factor': 10000.0,
+                 'max_momentum': 0.937,
+                 'pct_start': 0.3},
+ 'lr_scheduler': {'milestone_multiplier': 0.1,
+                  'milestones': [40, 50],
+                  'warmup_epochs': 1,
+                  'warmup_multiplier': 0.2},
+ 'mAP': {'iou_threshold': 0.7,
+         'max_detections': 150,
+         'min_confidence': 0.02,
+         'nms_threshold': 0.02},
+ 'model': {'freeze': False,
+           'name': 'yolov7-w6',
+           'pretrained': True,
+           'weight_path': False},
+ 'optimizer': {'learning_rate': 0.05,
+               'lr_scheduler': 'OneCycleLR',
+               'name': 'SGD',
+               'weight_decay': 0.0005},
+ 'trainer': {'accumulate_grad_batches': 2,
+             'check_val_every_n_epoch': 1,
+             'ckpt_path': '/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models/CropsOrWeed9_1280px_yolov7-w6_epoch=7_lr=_batch=8_val_loss=1.865_map=0.216.ckpt',
+             'deepspeed_config': {'train_batch_size': 32,
+                                  'train_micro_batch_size_per_gpu': 16,
+                                  'zero_allow_untested_optimizer': True,
+                                  'zero_force_ds_cpu_optimizer': False,
+                                  'zero_optimization': {'allgather_bucket_size': 500000000.0,
+                                                        'offload_optimizer': {'device': 'cpu',
+                                                                              'pin_memory': True},
+                                                        'offload_parameters': True,
+                                                        'reduce_bucket_size': 500000000.0,
+                                                        'stage': 3}},
+             'disable_val_sanity_checks': True,
+             'max_epochs': 40,
+             'precision': 32,
+             'strategy': 'auto',
+             'val_check_interval': False}}
+
+
+...Data Module initialized
+Transferred 646/668 items from https://github.com/Chris-hughes10/Yolov7-training/releases/download/0.1.0/yolov7-w6_training_state_dict.pt
+Model created
+
+Data paths already exists. Skipping download and mask generation. No integrity check was performed.
+BBoxes cached in 5e+01 s
+BBoxes cached in 8e+00 s
+Checkpoint at /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models/CropsOrWeed9_1280px_yolov7-w6_epoch=7_lr=_batch=8_val_loss=1.865_map=0.216.ckpt not found. Aborting training. 
+ Training without loading checkpoint
+Data paths already exists. Skipping download and mask generation. No integrity check was performed.
+Traceback (most recent call last):
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 345, in train
+    if settings['trainer']['ckpt_path']:
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 520, in fit
+    call._call_and_handle_interrupt(
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 44, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 559, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 901, in _run
+    self._checkpoint_connector._restore_modules_and_callbacks(ckpt_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/connectors/checkpoint_connector.py", line 395, in _restore_modules_and_callbacks
+    self.resume_start(checkpoint_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/connectors/checkpoint_connector.py", line 82, in resume_start
+    loaded_checkpoint = self.trainer.strategy.load_checkpoint(checkpoint_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/strategies/strategy.py", line 347, in load_checkpoint
+    return self.checkpoint_io.load_checkpoint(checkpoint_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/lightning_fabric/plugins/io/torch_io.py", line 87, in load_checkpoint
+    raise FileNotFoundError(f"Checkpoint at {path} not found. Aborting training.")
+FileNotFoundError: Checkpoint at /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models/CropsOrWeed9_1280px_yolov7-w6_epoch=7_lr=_batch=8_val_loss=1.865_map=0.216.ckpt not found. Aborting training.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 357, in <module>
+    
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 349, in train
+    print(e, "\n", "Training without loading checkpoint")
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 520, in fit
+    call._call_and_handle_interrupt(
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 44, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 559, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 896, in _run
+    call._call_setup_hook(self)  # allow user to setup lightning_module in accelerator environment
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 81, in _call_setup_hook
+    _call_lightning_datamodule_hook(trainer, "setup", stage=fn)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 162, in _call_lightning_datamodule_hook
+    return fn(*args, **kwargs)
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/model.py", line 584, in setup
+    raise ValueError(f"Invalid stage '{stage}'", )
+ValueError: Invalid stage 'fit'
+
+============================= JOB FEEDBACK =============================
+
+NodeName=uc2n509
+Job ID: 21993739
+Cluster: uc2
+User/Group: ma_dsperber/ma_ma
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 10
+CPU Utilized: 00:00:09
+CPU Efficiency: 0.41% of 00:36:20 core-walltime
+Job Wall-clock time: 00:03:38
+Memory Utilized: 801.02 MB
+Memory Efficiency: 0.43% of 180.00 GB

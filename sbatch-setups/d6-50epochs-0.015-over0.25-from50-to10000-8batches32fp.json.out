@@ -1,0 +1,179 @@
+TestTrain
+Settings from ./sbatch-setups/d6-50epochs-0.015-over0.25-from50-to10000-8batches32fp.json
+[rank: 0] Global seed set to 4222
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+Downloading: "https://github.com/Chris-hughes10/Yolov7-training/releases/download/0.1.0/yolov7-d6_training_state_dict.pt" to /home/ma/ma_ma/ma_dsperber/.cache/torch/hub/checkpoints/yolov7-d6_training_state_dict.pt
+Missing logger folder: ./lightning_logs/CropOrWeed2_1280px_yolov7-d6max_epochs=50
+/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/callbacks/model_checkpoint.py:612: UserWarning: Checkpoint directory /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models exists and is not empty.
+  rank_zero_warn(f"Checkpoint directory {dirpath} exists and is not empty.")
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name     | Type                 | Params | In sizes           | Out sizes                                                                                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0 | model    | Yolov7Model          | 152 M  | [1, 3, 1280, 1280] | [[1, 3, 160, 160, 7], [1, 3, 80, 80, 7], [1, 3, 40, 40, 7], [1, 3, 20, 20, 7], [1, 3, 160, 160, 7], [1, 3, 80, 80, 7], [1, 3, 40, 40, 7], [1, 3, 20, 20, 7]]
+1 | mAP      | MeanAveragePrecision | 0      | ?                  | ?                                                                                                                                                           
+2 | test_mAP | MeanAveragePrecision | 0      | ?                  | ?                                                                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+152 M     Trainable params
+0         Non-trainable params
+152 M     Total params
+611.638   Total estimated model params size (MB)
+SLURM auto-requeueing enabled. Setting signal handlers.
+loading torch...imported torchimported lightning and albumentations. Importing model framework...
+Frameworks
+Namespace(settings='./sbatch-setups/d6-50epochs-0.015-over0.25-from50-to10000-8batches32fp.json')
+{'dataset': {'accumulate_batch_size': 1,
+             'batch_size': 8,
+             'eval_batch_scale': 3,
+             'image_size': [1280, 1280],
+             'name': 'CropOrWeed2',
+             'num_workers': 10,
+             'seed': 4222,
+             'stack2_images': True,
+             'use_extra_class': 0},
+ 'loss': {'box_loss_weight': 0.05,
+          'cls_loss_weight': 0.5,
+          'obj_loss_weight': 1.0,
+          'ota_loss': True},
+ 'lr_onecycle': {'base_momentum': 0.8,
+                 'div_factor': 50.0,
+                 'final_div_factor': 10000.0,
+                 'max_lr': 0.015,
+                 'max_momentum': 0.937,
+                 'pct_start': 0.25},
+ 'lr_scheduler': {'milestone_multiplier': 0.1,
+                  'milestones': [40, 50],
+                  'warmup_epochs': 1,
+                  'warmup_multiplier': 0.2},
+ 'mAP': {'iou_threshold': 0.7,
+         'max_detections': 150,
+         'min_confidence': 0.02,
+         'nms_threshold': 0.02},
+ 'model': {'freeze': False, 'name': 'yolov7-d6', 'pretrained': True},
+ 'optimizer': {'learning_rate': 0.0025,
+               'lr_scheduler': 'OneCycleLR',
+               'name': 'SGD',
+               'weight_decay': 0.0005},
+ 'trainer': {'ckpt_path': False,
+             'deepspeed_config': {'train_batch_size': 'batch_size',
+                                  'train_micro_batch_size_per_gpu': 'batch_size',
+                                  'zero_allow_untested_optimizer': True,
+                                  'zero_force_ds_cpu_optimizer': False,
+                                  'zero_optimization': {'allgather_bucket_size': 500000000.0,
+                                                        'offload_optimizer': {'device': 'cpu',
+                                                                              'pin_memory': True},
+                                                        'reduce_bucket_size': 500000000.0,
+                                                        'stage': 2}},
+             'max_epochs': 50,
+             'precision': 32,
+             'strategy': 'auto'}}
+Using Deepseed False batch size 8
+
+
+
+Using customized paths: {'bboxes': '/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/data/', 'images': '/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/data/'}
+...Data Module initialized
+Unable to load pretrained model weights from https://github.com/Chris-hughes10/Yolov7-training/releases/download/0.1.0/yolov7-d6_training_state_dict.pt
+HTTP Error 429: Too Many Requests
+Data paths already exists. Skipping download and mask generation. No integrity check was performed.
+BBoxes cached in 5e+01 s
+BBoxes cached in 7e+00 s
+model type torch.float32
+Using OneCycleLR scheduler
+Fitting yolov7-d6 on CropOrWeed2
+Sanity Checking: 0it [00:00, ?it/s]Sanity Checking:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:  50%|█████     | 1/2 [00:01<00:01,  1.24s/it]Sanity Checking DataLoader 0: 100%|██████████| 2/2 [00:02<00:00,  1.16s/it]/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/connectors/logger_connector/result.py:212: UserWarning: You called `self.log('map_50', ...)` in your `on_validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32.
+  warning_cache.warn(
+/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/connectors/logger_connector/result.py:212: UserWarning: You called `self.log('map_75', ...)` in your `on_validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32.
+  warning_cache.warn(
+                                                                           Training: 0it [00:00, ?it/s]Training:   0%|          | 0/675 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/675 [00:00<?, ?it/s] Traceback (most recent call last):
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 297, in <module>
+    train()
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 284, in train
+    pprint(trainer.fit(pl_model, data))
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 520, in fit
+    call._call_and_handle_interrupt(
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 44, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 559, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 935, in _run
+    results = self._run_stage()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 978, in _run_stage
+    self.fit_loop.run()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/fit_loop.py", line 201, in run
+    self.advance()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/fit_loop.py", line 354, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 133, in run
+    self.advance(data_fetcher)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 218, in advance
+    batch_output = self.automatic_optimization.run(trainer.optimizers[0], kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 185, in run
+    self._optimizer_step(kwargs.get("batch_idx", 0), closure)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 261, in _optimizer_step
+    call._call_lightning_module_hook(
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 142, in _call_lightning_module_hook
+    output = fn(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/core/module.py", line 1265, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/core/optimizer.py", line 158, in step
+    step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/strategies/strategy.py", line 224, in optimizer_step
+    return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/plugins/precision/precision_plugin.py", line 114, in optimizer_step
+    return optimizer.step(closure=closure, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/optim/lr_scheduler.py", line 69, in wrapper
+    return wrapped(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 280, in wrapper
+    out = func(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/optim/optimizer.py", line 33, in _use_grad
+    ret = func(self, *args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/optim/sgd.py", line 67, in step
+    loss = closure()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/plugins/precision/precision_plugin.py", line 101, in _wrap_closure
+    closure_result = closure()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 140, in __call__
+    self._result = self.closure(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 126, in closure
+    step_output = self._step_fn()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 308, in _training_step
+    training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 288, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/strategies/strategy.py", line 366, in training_step
+    return self.model.training_step(*args, **kwargs)
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/model.py", line 698, in training_step
+    preds = self.model(images)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/./Yolov7-training/yolov7/models/yolo.py", line 60, in forward
+    x = module_(x)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/./Yolov7-training/yolov7/models/core/layers.py", line 90, in forward
+    return self.act(self.bn(self.conv(x)))
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/nn/modules/activation.py", line 396, in forward
+    return F.silu(input, inplace=self.inplace)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/torch/nn/functional.py", line 2058, in silu
+    return torch._C._nn.silu_(input)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 20.00 MiB (GPU 0; 31.74 GiB total capacity; 31.22 GiB already allocated; 12.25 MiB free; 31.32 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+Epoch 0:   0%|          | 0/675 [00:08<?, ?it/s]
+============================= JOB FEEDBACK =============================
+
+NodeName=uc2n515
+Job ID: 21991447
+Cluster: uc2
+User/Group: ma_dsperber/ma_ma
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 10
+CPU Utilized: 00:02:40
+CPU Efficiency: 12.90% of 00:20:40 core-walltime
+Job Wall-clock time: 00:02:04
+Memory Utilized: 33.05 GB
+Memory Efficiency: 16.53% of 200.00 GB

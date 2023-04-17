@@ -1,0 +1,47 @@
+settings:
+  dataset:
+    accumulate_batch_size: 1
+    batch_size: 48
+    image_size: !!python/tuple
+    - 640
+    - 640
+    name: CropOrWeed2
+    seed: 4222
+    stack2_images: true
+    use_extra_class: 0
+  loss:
+    box_loss_weight: 0.05
+    cls_loss_weight: 0.5
+    obj_loss_weight: 1.0
+    ota_loss: true
+  lr_onecycle:
+    base_momentum: 0.8
+    div_factor: 10
+    final_div_factor: 357
+    max_lr: 0.02
+    max_momentum: 0.937
+    pct_start: 0.2
+  lr_scheduler:
+    milestone_multiplier: 0.1
+    milestones:
+    - 40
+    - 50
+    warmup_epochs: 1
+    warmup_multiplier: 0.2
+  mAP:
+    iou_threshold: 0.7
+    max_detections: 150
+    min_confidence: 0.02
+    nms_threshold: 0.02
+  model:
+    freeze: false
+    name: yolov7-tiny
+    pretrained: false
+  optimizer:
+    learning_rate: 0.039228543373364844
+    lr_scheduler: OneCycleLR
+    name: SGD
+    weight_decay: 0.0005
+  trainer:
+    max_epochs: 20
+    strategy: auto

@@ -1,0 +1,68 @@
+settings:
+  dataset:
+    accumulate_batch_size: 1
+    batch_size: 20
+    eval_batch_scale: 5
+    image_size:
+    - 1280
+    - 1280
+    name: Fine24
+    num_workers: 10
+    seed: 4222
+    stack2_images: true
+    use_extra_class: 0
+  loss:
+    box_loss_weight: 0.05
+    cls_loss_weight: 0.5
+    obj_loss_weight: 1.0
+    ota_loss: true
+  lr_onecycle:
+    base_momentum: 0.8
+    div_factor: 200.0
+    final_div_factor: 5000.0
+    max_momentum: 0.937
+    pct_start: 0.3
+  lr_scheduler:
+    milestone_multiplier: 0.1
+    milestones:
+    - 40
+    - 50
+    warmup_epochs: 1
+    warmup_multiplier: 0.2
+  mAP:
+    iou_threshold: 0.7
+    max_detections: 150
+    min_confidence: 0.02
+    nms_threshold: 0.02
+  model:
+    freeze: false
+    name: yolov7-e6
+    pretrained: true
+    weight_dataset: CropsOrWeed9
+    weight_path: CropsOrWeed9_1280px_yolov7-e6_epoch=35_lr=_batch=16_val_loss=2.049_map=0.763.ckpt
+  optimizer:
+    learning_rate: 0.005
+    lr_scheduler: OneCycleLR
+    name: SGD
+    weight_decay: 0.0005
+  trainer:
+    accumulate_grad_batches: 1
+    check_val_every_n_epoch: 2
+    ckpt_path: false
+    deepspeed_config:
+      train_batch_size: 20
+      train_micro_batch_size_per_gpu: 20
+      zero_allow_untested_optimizer: true
+      zero_force_ds_cpu_optimizer: false
+      zero_optimization:
+        allgather_bucket_size: 500000000.0
+        offload_optimizer:
+          device: cpu
+          pin_memory: true
+        reduce_bucket_size: 500000000.0
+        stage: 2
+    disable_val_sanity_checks: true
+    max_epochs: 40
+    precision: 32
+    strategy: auto
+    val_check_interval: false

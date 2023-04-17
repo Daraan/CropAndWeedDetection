@@ -1,0 +1,169 @@
+TestTrain
+Settings from ./sbatch-setups/w6-40epochs-0.005-over0.33-from80-to6500.json
+[rank: 0] Global seed set to 4222
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+[rank: 0] Global seed set to 4222
+initializing deepspeed distributed: GLOBAL_RANK: 0, MEMBER: 1/1
+/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/callbacks/model_checkpoint.py:612: UserWarning: Checkpoint directory /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/models exists and is not empty.
+  rank_zero_warn(f"Checkpoint directory {dirpath} exists and is not empty.")
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+loading torch...imported torchimported lightning and albumentations. Importing model framework...
+Frameworks
+Namespace(settings='./sbatch-setups/w6-40epochs-0.005-over0.33-from80-to6500.json')
+{'dataset': {'accumulate_batch_size': 1,
+             'batch_size': 16,
+             'eval_batch_scale': 2,
+             'image_size': [1280, 1280],
+             'name': 'CropOrWeed2',
+             'num_workers': 19,
+             'seed': 4222,
+             'stack2_images': True,
+             'use_extra_class': 0},
+ 'loss': {'box_loss_weight': 0.05,
+          'cls_loss_weight': 0.5,
+          'obj_loss_weight': 1.0,
+          'ota_loss': True},
+ 'lr_onecycle': {'base_momentum': 0.8,
+                 'div_factor': 80.0,
+                 'final_div_factor': 6500.0,
+                 'max_lr': 0.005,
+                 'max_momentum': 0.937,
+                 'pct_start': 0.33},
+ 'lr_scheduler': {'milestone_multiplier': 0.1,
+                  'milestones': [40, 50],
+                  'warmup_epochs': 1,
+                  'warmup_multiplier': 0.2},
+ 'mAP': {'iou_threshold': 0.7,
+         'max_detections': 150,
+         'min_confidence': 0.02,
+         'nms_threshold': 0.02},
+ 'model': {'freeze': False, 'name': 'yolov7-w6', 'pretrained': True},
+ 'optimizer': {'learning_rate': 0.001,
+               'lr_scheduler': 'OneCycleLR',
+               'name': 'SGD',
+               'weight_decay': 0.0005},
+ 'trainer': {'ckpt_path': False,
+             'deepspeed_config': {'train_batch_size': 'batch_size',
+                                  'train_micro_batch_size_per_gpu': 'batch_size',
+                                  'zero_allow_untested_optimizer': True,
+                                  'zero_force_ds_cpu_optimizer': False,
+                                  'zero_optimization': {'allgather_bucket_size': 500000000.0,
+                                                        'offload_optimizer': {'device': 'cpu',
+                                                                              'pin_memory': True},
+                                                        'reduce_bucket_size': 500000000.0,
+                                                        'stage': 2}},
+             'max_epochs': 40,
+             'precision': '16-mixed',
+             'strategy': 'auto'}}
+Using Deepseed True batch size 16
+
+
+
+Using customized paths: {'bboxes': '/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/data/', 'images': '/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/data/'}
+...Data Module initialized
+Transferred 646/668 items from https://github.com/Chris-hughes10/Yolov7-training/releases/download/0.1.0/yolov7-w6_training_state_dict.pt
+Data paths already exists. Skipping download and mask generation. No integrity check was performed.
+BBoxes cached in 5e+01 s
+BBoxes cached in 8e+00 s
+model type torch.float32
+Using OneCycleLR scheduler
+[2023-04-08 00:39:24,634] [WARNING] [engine.py:1214:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
+Using /pfs/data5/home/ma/ma_ma/ma_dsperber/.cache/torch_extensions/py39_cu117 as PyTorch extensions root...
+Emitting ninja build file /pfs/data5/home/ma/ma_ma/ma_dsperber/.cache/torch_extensions/py39_cu117/utils/build.ninja...
+Building extension module utils...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module utils...
+Using /pfs/data5/home/ma/ma_ma/ma_dsperber/.cache/torch_extensions/py39_cu117 as PyTorch extensions root...
+No modifications detected for re-loaded extension module utils, skipping build step...
+Loading extension module utils...
+
+  | Name     | Type                 | Params | In sizes           | Out sizes                                                                                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0 | model    | Yolov7Model          | 81.0 M | [1, 3, 1280, 1280] | [[1, 3, 160, 160, 7], [1, 3, 80, 80, 7], [1, 3, 40, 40, 7], [1, 3, 20, 20, 7], [1, 3, 160, 160, 7], [1, 3, 80, 80, 7], [1, 3, 40, 40, 7], [1, 3, 20, 20, 7]]
+1 | mAP      | MeanAveragePrecision | 0      | ?                  | ?                                                                                                                                                           
+2 | test_mAP | MeanAveragePrecision | 0      | ?                  | ?                                                                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+81.0 M    Trainable params
+0         Non-trainable params
+81.0 M    Total params
+323.847   Total estimated model params size (MB)
+SLURM auto-requeueing enabled. Setting signal handlers.
+Time to load utils op: 0.4816303253173828 seconds
+Rank: 0 partition count [1, 1] and sizes[(73084, False), (80888704, False)] 
+Time to load utils op: 0.0010249614715576172 seconds
+Fitting yolov7-w6 on CropOrWeed2
+Sanity Checking: 0it [00:00, ?it/s]Sanity Checking:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:  50%|█████     | 1/2 [00:07<00:07,  7.74s/it]Sanity Checking DataLoader 0: 100%|██████████| 2/2 [00:08<00:00,  4.25s/it]/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/connectors/logger_connector/result.py:212: UserWarning: You called `self.log('map_50', ...)` in your `on_validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32.
+  warning_cache.warn(
+/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/connectors/logger_connector/result.py:212: UserWarning: You called `self.log('map_75', ...)` in your `on_validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32.
+  warning_cache.warn(
+                                                                           Training: 0it [00:00, ?it/s]Training:   0%|          | 0/338 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/338 [00:00<?, ?it/s] Epoch 0:   0%|          | 1/338 [00:23<2:10:22, 23.21s/it]Epoch 0:   0%|          | 1/338 [00:23<2:10:22, 23.21s/it, v_num=1, train_loss=224.0]Epoch 0:   1%|          | 2/338 [00:24<1:07:48, 12.11s/it, v_num=1, train_loss=224.0]Epoch 0:   1%|          | 2/338 [00:24<1:07:49, 12.11s/it, v_num=1, train_loss=225.0]Epoch 0:   1%|          | 3/338 [00:25<46:58,  8.41s/it, v_num=1, train_loss=225.0]  Epoch 0:   1%|          | 3/338 [00:25<46:59,  8.42s/it, v_num=1, train_loss=225.0]Epoch 0:   1%|          | 4/338 [00:26<36:32,  6.56s/it, v_num=1, train_loss=225.0]Epoch 0:   1%|          | 4/338 [00:26<36:32,  6.56s/it, v_num=1, train_loss=224.0]Epoch 0:   1%|▏         | 5/338 [00:27<30:15,  5.45s/it, v_num=1, train_loss=224.0]Epoch 0:   1%|▏         | 5/338 [00:27<30:15,  5.45s/it, v_num=1, train_loss=224.0]Epoch 0:   2%|▏         | 6/338 [00:28<26:06,  4.72s/it, v_num=1, train_loss=224.0]Epoch 0:   2%|▏         | 6/338 [00:28<26:06,  4.72s/it, v_num=1, train_loss=224.0]Epoch 0:   2%|▏         | 7/338 [00:29<23:06,  4.19s/it, v_num=1, train_loss=224.0]Epoch 0:   2%|▏         | 7/338 [00:29<23:06,  4.19s/it, v_num=1, train_loss=224.0]Epoch 0:   2%|▏         | 8/338 [00:30<20:52,  3.80s/it, v_num=1, train_loss=224.0]Epoch 0:   2%|▏         | 8/338 [00:30<20:52,  3.80s/it, v_num=1, train_loss=225.0]Epoch 0:   3%|▎         | 9/338 [00:31<19:07,  3.49s/it, v_num=1, train_loss=225.0]Epoch 0:   3%|▎         | 9/338 [00:31<19:08,  3.49s/it, v_num=1, train_loss=224.0]Epoch 0:   3%|▎         | 10/338 [00:33<18:13,  3.33s/it, v_num=1, train_loss=224.0]Epoch 0:   3%|▎         | 10/338 [00:33<18:13,  3.33s/it, v_num=1, train_loss=224.0]Epoch 0:   3%|▎         | 11/338 [00:34<17:01,  3.12s/it, v_num=1, train_loss=224.0]Epoch 0:   3%|▎         | 11/338 [00:34<17:01,  3.12s/it, v_num=1, train_loss=223.0]Epoch 0:   4%|▎         | 12/338 [00:36<16:18,  3.00s/it, v_num=1, train_loss=223.0]Epoch 0:   4%|▎         | 12/338 [00:36<16:18,  3.00s/it, v_num=1, train_loss=224.0]Epoch 0:   4%|▍         | 13/338 [00:37<15:38,  2.89s/it, v_num=1, train_loss=224.0]Epoch 0:   4%|▍         | 13/338 [00:37<15:38,  2.89s/it, v_num=1, train_loss=223.0]Epoch 0:   4%|▍         | 14/338 [00:38<14:52,  2.76s/it, v_num=1, train_loss=223.0]Epoch 0:   4%|▍         | 14/338 [00:38<14:52,  2.76s/it, v_num=1, train_loss=222.0]Epoch 0:   4%|▍         | 15/338 [00:40<14:25,  2.68s/it, v_num=1, train_loss=222.0]Epoch 0:   4%|▍         | 15/338 [00:40<14:25,  2.68s/it, v_num=1, train_loss=222.0]Epoch 0:   5%|▍         | 16/338 [00:41<14:00,  2.61s/it, v_num=1, train_loss=222.0]Epoch 0:   5%|▍         | 16/338 [00:41<14:00,  2.61s/it, v_num=1, train_loss=221.0]Epoch 0:   5%|▌         | 17/338 [00:43<13:40,  2.56s/it, v_num=1, train_loss=221.0]Epoch 0:   5%|▌         | 17/338 [00:43<13:40,  2.56s/it, v_num=1, train_loss=220.0]Epoch 0:   5%|▌         | 18/338 [00:44<13:19,  2.50s/it, v_num=1, train_loss=220.0]Epoch 0:   5%|▌         | 18/338 [00:44<13:19,  2.50s/it, v_num=1, train_loss=219.0]Epoch 0:   6%|▌         | 19/338 [00:46<13:03,  2.46s/it, v_num=1, train_loss=219.0]Epoch 0:   6%|▌         | 19/338 [00:46<13:03,  2.46s/it, v_num=1, train_loss=218.0]Epoch 0:   6%|▌         | 20/338 [00:48<12:45,  2.41s/it, v_num=1, train_loss=218.0]Epoch 0:   6%|▌         | 20/338 [00:48<12:45,  2.41s/it, v_num=1, train_loss=216.0]Epoch 0:   6%|▌         | 21/338 [00:49<12:22,  2.34s/it, v_num=1, train_loss=216.0]Epoch 0:   6%|▌         | 21/338 [00:49<12:22,  2.34s/it, v_num=1, train_loss=inf.0]Epoch 0:   7%|▋         | 22/338 [00:50<12:09,  2.31s/it, v_num=1, train_loss=inf.0]Epoch 0:   7%|▋         | 22/338 [00:50<12:09,  2.31s/it, v_num=1, train_loss=215.0]Epoch 0:   7%|▋         | 23/338 [00:52<11:57,  2.28s/it, v_num=1, train_loss=215.0]Epoch 0:   7%|▋         | 23/338 [00:52<11:57,  2.28s/it, v_num=1, train_loss=214.0]Epoch 0:   7%|▋         | 24/338 [00:53<11:38,  2.22s/it, v_num=1, train_loss=214.0]Epoch 0:   7%|▋         | 24/338 [00:53<11:38,  2.22s/it, v_num=1, train_loss=212.0]Epoch 0:   7%|▋         | 25/338 [00:54<11:21,  2.18s/it, v_num=1, train_loss=212.0]Epoch 0:   7%|▋         | 25/338 [00:54<11:21,  2.18s/it, v_num=1, train_loss=212.0]Epoch 0:   8%|▊         | 26/338 [00:56<11:12,  2.16s/it, v_num=1, train_loss=212.0]Epoch 0:   8%|▊         | 26/338 [00:56<11:12,  2.16s/it, v_num=1, train_loss=212.0]Epoch 0:   8%|▊         | 27/338 [00:57<11:04,  2.14s/it, v_num=1, train_loss=212.0]Epoch 0:   8%|▊         | 27/338 [00:57<11:04,  2.14s/it, v_num=1, train_loss=210.0]Epoch 0:   8%|▊         | 28/338 [00:58<10:50,  2.10s/it, v_num=1, train_loss=210.0]Epoch 0:   8%|▊         | 28/338 [00:58<10:50,  2.10s/it, v_num=1, train_loss=209.0]Epoch 0:   9%|▊         | 29/338 [01:00<10:42,  2.08s/it, v_num=1, train_loss=209.0]Epoch 0:   9%|▊         | 29/338 [01:00<10:42,  2.08s/it, v_num=1, train_loss=210.0]Epoch 0:   9%|▉         | 30/338 [01:01<10:36,  2.07s/it, v_num=1, train_loss=210.0]Epoch 0:   9%|▉         | 30/338 [01:01<10:36,  2.07s/it, v_num=1, train_loss=207.0]Epoch 0:   9%|▉         | 31/338 [01:03<10:28,  2.05s/it, v_num=1, train_loss=207.0]Epoch 0:   9%|▉         | 31/338 [01:03<10:28,  2.05s/it, v_num=1, train_loss=206.0]Epoch 0:   9%|▉         | 32/338 [01:05<10:23,  2.04s/it, v_num=1, train_loss=206.0]Epoch 0:   9%|▉         | 32/338 [01:05<10:23,  2.04s/it, v_num=1, train_loss=205.0]Epoch 0:  10%|▉         | 33/338 [01:06<10:11,  2.00s/it, v_num=1, train_loss=205.0]Epoch 0:  10%|▉         | 33/338 [01:06<10:11,  2.00s/it, v_num=1, train_loss=203.0]Epoch 0:  10%|█         | 34/338 [01:07<10:05,  1.99s/it, v_num=1, train_loss=203.0]Epoch 0:  10%|█         | 34/338 [01:07<10:05,  1.99s/it, v_num=1, train_loss=203.0]Epoch 0:  10%|█         | 35/338 [01:09<10:00,  1.98s/it, v_num=1, train_loss=203.0]Epoch 0:  10%|█         | 35/338 [01:09<10:00,  1.98s/it, v_num=1, train_loss=202.0]Epoch 0:  11%|█         | 36/338 [01:10<09:54,  1.97s/it, v_num=1, train_loss=202.0]Epoch 0:  11%|█         | 36/338 [01:10<09:54,  1.97s/it, v_num=1, train_loss=201.0]Epoch 0:  11%|█         | 37/338 [01:12<09:49,  1.96s/it, v_num=1, train_loss=201.0]Epoch 0:  11%|█         | 37/338 [01:12<09:49,  1.96s/it, v_num=1, train_loss=199.0]Epoch 0:  11%|█         | 38/338 [01:14<09:44,  1.95s/it, v_num=1, train_loss=199.0]Epoch 0:  11%|█         | 38/338 [01:14<09:44,  1.95s/it, v_num=1, train_loss=199.0]Epoch 0:  12%|█▏        | 39/338 [01:15<09:40,  1.94s/it, v_num=1, train_loss=199.0]Epoch 0:  12%|█▏        | 39/338 [01:15<09:40,  1.94s/it, v_num=1, train_loss=197.0]Epoch 0:  12%|█▏        | 40/338 [01:17<09:35,  1.93s/it, v_num=1, train_loss=197.0]Epoch 0:  12%|█▏        | 40/338 [01:17<09:35,  1.93s/it, v_num=1, train_loss=197.0]Epoch 0:  12%|█▏        | 41/338 [01:18<09:30,  1.92s/it, v_num=1, train_loss=197.0]Epoch 0:  12%|█▏        | 41/338 [01:18<09:30,  1.92s/it, v_num=1, train_loss=195.0]Epoch 0:  12%|█▏        | 42/338 [01:19<09:22,  1.90s/it, v_num=1, train_loss=195.0]Epoch 0:  12%|█▏        | 42/338 [01:19<09:22,  1.90s/it, v_num=1, train_loss=194.0]Epoch 0:  13%|█▎        | 43/338 [01:20<09:14,  1.88s/it, v_num=1, train_loss=194.0]Epoch 0:  13%|█▎        | 43/338 [01:20<09:14,  1.88s/it, v_num=1, train_loss=inf.0]Epoch 0:  13%|█▎        | 44/338 [01:22<09:11,  1.88s/it, v_num=1, train_loss=inf.0]Epoch 0:  13%|█▎        | 44/338 [01:22<09:11,  1.88s/it, v_num=1, train_loss=194.0]Epoch 0:  13%|█▎        | 45/338 [01:24<09:07,  1.87s/it, v_num=1, train_loss=194.0]Epoch 0:  13%|█▎        | 45/338 [01:24<09:07,  1.87s/it, v_num=1, train_loss=194.0]Epoch 0:  14%|█▎        | 46/338 [01:25<09:04,  1.86s/it, v_num=1, train_loss=194.0]Epoch 0:  14%|█▎        | 46/338 [01:25<09:04,  1.86s/it, v_num=1, train_loss=192.0]Epoch 0:  14%|█▍        | 47/338 [01:27<09:01,  1.86s/it, v_num=1, train_loss=192.0]Epoch 0:  14%|█▍        | 47/338 [01:27<09:01,  1.86s/it, v_num=1, train_loss=191.0]Epoch 0:  14%|█▍        | 48/338 [01:28<08:57,  1.85s/it, v_num=1, train_loss=191.0]Epoch 0:  14%|█▍        | 48/338 [01:28<08:57,  1.85s/it, v_num=1, train_loss=189.0]Epoch 0:  14%|█▍        | 49/338 [01:30<08:53,  1.85s/it, v_num=1, train_loss=189.0]Epoch 0:  14%|█▍        | 49/338 [01:30<08:53,  1.85s/it, v_num=1, train_loss=189.0]Epoch 0:  15%|█▍        | 50/338 [01:32<08:50,  1.84s/it, v_num=1, train_loss=189.0]Epoch 0:  15%|█▍        | 50/338 [01:32<08:50,  1.84s/it, v_num=1, train_loss=187.0]Epoch 0:  15%|█▌        | 51/338 [01:33<08:46,  1.84s/it, v_num=1, train_loss=187.0]Epoch 0:  15%|█▌        | 51/338 [01:33<08:46,  1.84s/it, v_num=1, train_loss=187.0]Epoch 0:  15%|█▌        | 52/338 [01:34<08:40,  1.82s/it, v_num=1, train_loss=187.0]Epoch 0:  15%|█▌        | 52/338 [01:34<08:40,  1.82s/it, v_num=1, train_loss=185.0]Epoch 0:  16%|█▌        | 53/338 [01:35<08:34,  1.81s/it, v_num=1, train_loss=185.0]Epoch 0:  16%|█▌        | 53/338 [01:35<08:34,  1.81s/it, v_num=1, train_loss=185.0]Epoch 0:  16%|█▌        | 54/338 [01:37<08:31,  1.80s/it, v_num=1, train_loss=185.0]Epoch 0:  16%|█▌        | 54/338 [01:37<08:31,  1.80s/it, v_num=1, train_loss=185.0]Epoch 0:  16%|█▋        | 55/338 [01:39<08:29,  1.80s/it, v_num=1, train_loss=185.0]Epoch 0:  16%|█▋        | 55/338 [01:39<08:29,  1.80s/it, v_num=1, train_loss=184.0]Epoch 0:  17%|█▋        | 56/338 [01:40<08:26,  1.80s/it, v_num=1, train_loss=184.0]Epoch 0:  17%|█▋        | 56/338 [01:40<08:26,  1.80s/it, v_num=1, train_loss=182.0]Epoch 0:  17%|█▋        | 57/338 [01:42<08:23,  1.79s/it, v_num=1, train_loss=182.0]Epoch 0:  17%|█▋        | 57/338 [01:42<08:23,  1.79s/it, v_num=1, train_loss=181.0]Epoch 0:  17%|█▋        | 58/338 [01:43<08:21,  1.79s/it, v_num=1, train_loss=181.0]Epoch 0:  17%|█▋        | 58/338 [01:43<08:21,  1.79s/it, v_num=1, train_loss=181.0]Epoch 0:  17%|█▋        | 59/338 [01:45<08:18,  1.79s/it, v_num=1, train_loss=181.0]Epoch 0:  17%|█▋        | 59/338 [01:45<08:18,  1.79s/it, v_num=1, train_loss=178.0]Epoch 0:  18%|█▊        | 60/338 [01:46<08:15,  1.78s/it, v_num=1, train_loss=178.0]Epoch 0:  18%|█▊        | 60/338 [01:46<08:15,  1.78s/it, v_num=1, train_loss=177.0]Epoch 0:  18%|█▊        | 61/338 [01:48<08:12,  1.78s/it, v_num=1, train_loss=177.0]Epoch 0:  18%|█▊        | 61/338 [01:48<08:12,  1.78s/it, v_num=1, train_loss=175.0]Epoch 0:  18%|█▊        | 62/338 [01:50<08:10,  1.78s/it, v_num=1, train_loss=175.0]Epoch 0:  18%|█▊        | 62/338 [01:50<08:10,  1.78s/it, v_num=1, train_loss=174.0]Epoch 0:  19%|█▊        | 63/338 [01:51<08:07,  1.77s/it, v_num=1, train_loss=174.0]Epoch 0:  19%|█▊        | 63/338 [01:51<08:07,  1.77s/it, v_num=1, train_loss=172.0]Epoch 0:  19%|█▉        | 64/338 [01:53<08:04,  1.77s/it, v_num=1, train_loss=172.0]Epoch 0:  19%|█▉        | 64/338 [01:53<08:04,  1.77s/it, v_num=1, train_loss=171.0]Epoch 0:  19%|█▉        | 65/338 [01:54<08:02,  1.77s/it, v_num=1, train_loss=171.0]Epoch 0:  19%|█▉        | 65/338 [01:54<08:02,  1.77s/it, v_num=1, train_loss=169.0]Epoch 0:  20%|█▉        | 66/338 [01:56<07:59,  1.76s/it, v_num=1, train_loss=169.0]Epoch 0:  20%|█▉        | 66/338 [01:56<07:59,  1.76s/it, v_num=1, train_loss=167.0]Epoch 0:  20%|█▉        | 67/338 [01:58<07:57,  1.76s/it, v_num=1, train_loss=167.0]Epoch 0:  20%|█▉        | 67/338 [01:58<07:57,  1.76s/it, v_num=1, train_loss=165.0]Epoch 0:  20%|██        | 68/338 [01:59<07:54,  1.76s/it, v_num=1, train_loss=165.0]Epoch 0:  20%|██        | 68/338 [01:59<07:54,  1.76s/it, v_num=1, train_loss=162.0]Epoch 0:  20%|██        | 69/338 [02:01<07:52,  1.76s/it, v_num=1, train_loss=162.0]Epoch 0:  20%|██        | 69/338 [02:01<07:52,  1.76s/it, v_num=1, train_loss=160.0]Epoch 0:  21%|██        | 70/338 [02:02<07:50,  1.75s/it, v_num=1, train_loss=160.0]Epoch 0:  21%|██        | 70/338 [02:02<07:50,  1.75s/it, v_num=1, train_loss=157.0]Epoch 0:  21%|██        | 71/338 [02:04<07:47,  1.75s/it, v_num=1, train_loss=157.0]Epoch 0:  21%|██        | 71/338 [02:04<07:47,  1.75s/it, v_num=1, train_loss=156.0]Epoch 0:  21%|██▏       | 72/338 [02:06<07:45,  1.75s/it, v_num=1, train_loss=156.0]Epoch 0:  21%|██▏       | 72/338 [02:06<07:45,  1.75s/it, v_num=1, train_loss=153.0]Epoch 0:  22%|██▏       | 73/338 [02:07<07:43,  1.75s/it, v_num=1, train_loss=153.0]Epoch 0:  22%|██▏       | 73/338 [02:07<07:43,  1.75s/it, v_num=1, train_loss=151.0]Epoch 0:  22%|██▏       | 74/338 [02:09<07:40,  1.74s/it, v_num=1, train_loss=151.0]Epoch 0:  22%|██▏       | 74/338 [02:09<07:40,  1.74s/it, v_num=1, train_loss=148.0]Epoch 0:  22%|██▏       | 75/338 [02:10<07:38,  1.74s/it, v_num=1, train_loss=148.0]Epoch 0:  22%|██▏       | 75/338 [02:10<07:38,  1.74s/it, v_num=1, train_loss=145.0]Epoch 0:  22%|██▏       | 76/338 [02:12<07:36,  1.74s/it, v_num=1, train_loss=145.0]Epoch 0:  22%|██▏       | 76/338 [02:12<07:36,  1.74s/it, v_num=1, train_loss=143.0]Epoch 0:  23%|██▎       | 77/338 [02:13<07:34,  1.74s/it, v_num=1, train_loss=143.0]Epoch 0:  23%|██▎       | 77/338 [02:13<07:34,  1.74s/it, v_num=1, train_loss=141.0]Epoch 0:  23%|██▎       | 78/338 [02:15<07:31,  1.74s/it, v_num=1, train_loss=141.0]Epoch 0:  23%|██▎       | 78/338 [02:15<07:31,  1.74s/it, v_num=1, train_loss=138.0]Epoch 0:  23%|██▎       | 79/338 [02:16<07:27,  1.73s/it, v_num=1, train_loss=138.0]Epoch 0:  23%|██▎       | 79/338 [02:16<07:27,  1.73s/it, v_num=1, train_loss=inf.0]Epoch 0:  24%|██▎       | 80/338 [02:18<07:25,  1.73s/it, v_num=1, train_loss=inf.0]Epoch 0:  24%|██▎       | 80/338 [02:18<07:25,  1.73s/it, v_num=1, train_loss=134.0]Traceback (most recent call last):
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 297, in <module>
+    train()
+  File "/pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/train.py", line 284, in train
+    pprint(trainer.fit(pl_model, data))
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 520, in fit
+    call._call_and_handle_interrupt(
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 42, in _call_and_handle_interrupt
+    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 92, in launch
+    return function(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 559, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 935, in _run
+    results = self._run_stage()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/trainer.py", line 978, in _run_stage
+    self.fit_loop.run()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/fit_loop.py", line 201, in run
+    self.advance()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/fit_loop.py", line 354, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 133, in run
+    self.advance(data_fetcher)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 218, in advance
+    batch_output = self.automatic_optimization.run(trainer.optimizers[0], kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 185, in run
+    self._optimizer_step(kwargs.get("batch_idx", 0), closure)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 261, in _optimizer_step
+    call._call_lightning_module_hook(
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/trainer/call.py", line 142, in _call_lightning_module_hook
+    output = fn(*args, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/core/module.py", line 1265, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/core/optimizer.py", line 158, in step
+    step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/strategies/ddp.py", line 257, in optimizer_step
+    optimizer_output = super().optimizer_step(optimizer, closure, model, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/strategies/strategy.py", line 224, in optimizer_step
+    return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/pytorch_lightning/plugins/precision/deepspeed.py", line 102, in optimizer_step
+    return deepspeed_engine.step(**kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/deepspeed/runtime/engine.py", line 2184, in step
+    self._take_model_step(lr_kwargs)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/deepspeed/runtime/engine.py", line 2086, in _take_model_step
+    self.optimizer.step()
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1778, in step
+    self._update_scale(self.overflow)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 2028, in _update_scale
+    self.loss_scaler.update_scale(has_overflow)
+  File "/pfs/work7/workspace/scratch/ma_dsperber-industry/cropandweed-dataset/workenv/lib64/python3.9/site-packages/deepspeed/runtime/fp16/loss_scaler.py", line 164, in update_scale
+    raise Exception(
+Exception: Current loss scale already at minimum - cannot decrease scale anymore. Exiting run.
+
+============================= JOB FEEDBACK =============================
+
+NodeName=uc2n511
+Job ID: 21991332
+Cluster: uc2
+User/Group: ma_dsperber/ma_ma
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 20
+CPU Utilized: 00:20:25
+CPU Efficiency: 13.00% of 02:37:00 core-walltime
+Job Wall-clock time: 00:07:51
+Memory Utilized: 180.32 GB
+Memory Efficiency: 72.13% of 250.00 GB
