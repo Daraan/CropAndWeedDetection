@@ -7,7 +7,7 @@ settings:
     - 640
     - 640
     name: CropOrWeed2
-    normalize_images: true
+    normalize_images: false
     num_workers: 14
     seed: 4222
     stack2_images: true

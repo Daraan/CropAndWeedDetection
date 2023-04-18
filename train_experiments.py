@@ -244,7 +244,7 @@ def make_augmentations(settings):
                                  brightness=(0.6, 1.4), 
                                  contrast=(0.8, 1.2), 
                                  saturation=(0.7, 1.3), 
-                                 hue=(-0.055, 0.055)), 
+                                 hue=(-0.015, 0.015)), 
                                #A.InvertImg(p=0.2)
                               ], 
                               p=8
@@ -272,8 +272,6 @@ from copy import deepcopy
 def strict_on_validation_epoch_end(self):
     #print("computing map-val", self.current_epoch)
                                      
-
-    
     for mAP, prefix in zip([self.mAP, False], ["", "val_"]):
 
         #print("logging-val")
@@ -414,7 +412,16 @@ def train(settings=None, logname=None):
     
     
     
-    
+def _experiments_present(file):
+    for file in os.listdir("experiments"):
+        print("Checking", file)
+        if os.path.exists(os.path.join(".","lightning_logs", "experiments", os.path.splitext(file)[0])):
+            print("path exists", os.path.join("lightning_logs", "experiments", file))
+            return True
+        for dir in os.listdir(os.path.join(".","lightning_logs", "experiments")):
+            if not dir.startswith("settings"):
+                pass
+                
 
 if __name__ == "__main__":
     standard_eval = YOLO_PL.on_validation_epoch_end
@@ -424,8 +431,10 @@ if __name__ == "__main__":
         if os.path.exists(os.path.join(".","lightning_logs", "experiments", os.path.splitext(file)[0])):
             print("path exists", os.path.join("lightning_logs", "experiments", file))
             continue
-        else:
-            print(os.path.join("lightning_logs", "experiments", os.path.splitext(file)[0]), "does not exist")
+        if os.path.exists(os.path.join(".","lightning_logs", "experiments", "size", os.path.splitext(file)[0])):
+            continue
+
+        print(os.path.join("lightning_logs", "experiments", os.path.splitext(file)[0]), "does not exist")
         
         with open(os.path.join("experiments", file), "r") as f:
             settings = json.load(f)

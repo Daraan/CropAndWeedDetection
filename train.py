@@ -45,36 +45,43 @@ def parse_arguments():
                         help='specify file with training specifications')
     parser.add_argument('--ckpt_path', required=False,
                     help='Optionally load a checkpoint.')
-    parser.add_argument('--no_log', required=False, default=True,
-                    help='Optionally load a checkpoint.')                
+    parser.add_argument('--no_log', required=False, default=False,
+                    help='Optionally load a checkpoint.')      
+    parser.add_argument('--test_only', required=False, default=False,
+                    help='Do only test the checkpointed model')
+    parser.add_argument('--logdir', required=False, default="./lightning_logs",
+                    help='Do only test the checkpointed model')
+    parser.add_argument('--logname', required=False, type=str, default=None,
+                    help='Do only test the checkpointed model')                    
 
     args = parser.parse_args()
     return args
 
-def create_trainer(settings, logging=True):
+def create_trainer(settings, args, logging=True):
     BATCH_SIZE = settings["dataset"]['batch_size']
     MAX_EPOCHS = settings['trainer']['max_epochs']
     IMAGE_SIZE = settings['dataset']['image_size']
     
+    logname=args.logname
     # disable logging for example when debugging
     if logging:
-        filename = settings["dataset"]["name"]+"_"+str(IMAGE_SIZE[0])+"px_"+settings["model"]["name"]+"_{epoch}_lr="\
+        filename = logname or settings["dataset"]["name"]+"_"+str(IMAGE_SIZE[0])+"px_"+settings["model"]["name"]+"_{epoch}_lr="\
                                  "_batch="+str(BATCH_SIZE)+"_{val_loss:.3f}_{map:.3f}"
         checkpoint_callback = pl.callbacks.ModelCheckpoint(
             #=1,
             dirpath=MODEL_PATH,
-            filename=filename,
+            filename=(logname+"{map:.3f}") or filename,
             monitor="map",
             mode="max",
             verbose=1,
-            save_last=True
+            save_last=False
         )
         checkpoint_callback.CHECKPOINT_NAME_LAST = filename+"-last"
 
         lr_monitor = pl.callbacks.LearningRateMonitor(logging_interval='epoch')
 
-        tensor_logger  = pl.loggers.TensorBoardLogger("./lightning_logs", 
-                                                      name=settings["dataset"]["name"]+"_"+str(IMAGE_SIZE[0])+"px_"+settings['model']["name"]+f"max_epochs={MAX_EPOCHS}_fp={settings['trainer']['precision']}",
+        tensor_logger  = pl.loggers.TensorBoardLogger(args.logdir, #"./lightning_logs", 
+                                                      name=args.logname or settings["dataset"]["name"]+"_"+str(IMAGE_SIZE[0])+"px_"+settings['model']["name"]+f"max_epochs={MAX_EPOCHS}_fp={settings['trainer']['precision']}",
                                                       default_hp_metric=True,
                                                       log_graph=False)
 
@@ -136,7 +143,7 @@ def create_trainer(settings, logging=True):
         #max_steps=7000,
         accelerator="auto",
         devices=1 if torch.cuda.is_available() else 1,  # limiting got iPython runs
-        callbacks=callbacks,
+        callbacks=callbacks if not args.test_only else None,
         logger=[tensor_logger] if logging else [], # add fit_logger
         fast_dev_run=False,
         precision=settings['trainer']['precision'],
@@ -326,7 +333,7 @@ def train(settings=None):
         
     # Setups
     pprint(settings)
-    trainer = create_trainer(settings, logging=args.no_log)
+    trainer = create_trainer(settings, args, logging=not args.no_log)
     
     no_transform, augmentation_pipeline = make_augmentations(settings)
     data = CropAndWeedDataModule(settings['dataset']['name'], data_path, 
@@ -352,18 +359,23 @@ def train(settings=None):
     torch.set_float32_matmul_precision("medium")
     
     print("Model created", end="\n\n")
-    if settings['trainer']['ckpt_path']:
-        try:
-            pprint(trainer.fit(pl_model, data, ckpt_path=settings['trainer']['ckpt_path']))
-        except Exception as e:
-            raise
-            print(e, "\n", "Training without loading checkpoint")
+    if not args.test_only:
+        if settings['trainer']['ckpt_path']:
+            try:
+                pprint(trainer.fit(pl_model, data, ckpt_path=settings['trainer']['ckpt_path']))
+            except Exception as e:
+                raise
+                print(e, "\n", "Training without loading checkpoint")
+                pprint(trainer.fit(pl_model, data))
+        else:
             pprint(trainer.fit(pl_model, data))
-    else:
-        pprint(trainer.fit(pl_model, data))
     
-    if trainer.callback_metrics.get("map", 0) > 0.1:
-        trainer.test(pl_model, data)
+        if trainer.callback_metrics.get("map", 0) > 0.1:
+            trainer.test(pl_model, data)
+    else:
+        assert settings['trainer']['ckpt_path']
+        pl_model.to("cuda" if torch.cuda.is_available() else "cpu")
+        trainer.test(pl_model, data, ckpt_path=settings['trainer']['ckpt_path'])
     print("Training done")
 
 if __name__ == "__main__":

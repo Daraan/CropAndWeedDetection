@@ -711,6 +711,9 @@ class YOLO_PL(pl.LightningModule):
         
     def on_eval_start(self):
         self.loss_func.to(self.device)
+        
+    def on_test_start(self):
+        self.loss_func.to(self.device)
     
     def on_train_epoch_start(self):
         self.loss_func.train()
