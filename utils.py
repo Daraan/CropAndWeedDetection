@@ -200,6 +200,7 @@ def image_to_bbox_file(imfile, bbox_path, dataset="CropAndWeed"):
                         dataset,
                         os.path.splitext(name)[0]+ ".csv")
     
+DEBUG = False
 
 def visualize_bboxes(cnw_dataset, 
                             images : list,
@@ -247,11 +248,13 @@ def visualize_bboxes(cnw_dataset,
     if save_to_disk:
         visualizations_dir = os.path.join(output_dir, dataset)
         os.makedirs(visualizations_dir, exist_ok=True)
-    if predictions is None: # TODO never NONE
+    if predictions is None and bbox_files[0] is None: 
+        DEBUG and print("1st if")
         iterator = tqdm(sorted(os.listdir(bboxes_dir))) if pbar else sorted(os.listdir(bboxes_dir))
         assert plot_true_bboxes, "Not bboxes passed and no ground truths"
         predictions = [None] * len(iterator)
     else:
+        DEBUG and print("2nd if")
         def splitter(file):
             #print("file is", file)
             return os.path.split(file)[1]
@@ -274,6 +277,7 @@ def visualize_bboxes(cnw_dataset,
     if len(images) == 0:
         warnings.warn("No images to plot - iterator empty") 
     for bboxes_file, image, pred in zip(iterator, images, predictions):
+        DEBUG and print(bboxes_file)
         target = os.path.split(bboxes_file)[1] # filename.csv
         target = os.path.splitext(target)[0] # rootname
         if image_filter is not None and image_filter not in target:
