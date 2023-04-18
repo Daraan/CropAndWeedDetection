@@ -1,8 +1,13 @@
 # Using YOLOv7 for crop and weed detection
 
 
+Used dataset: [The Crop and Weed dataset](https://github.com/cropandweed/cropandweed-dataset)
+
+Used YOLOv7 version: https://github.com/Chris-hughes10/Yolov7-training/issues 
+
+
 --------------
-# Installation
+## Installation
 --------------
 
 
@@ -27,6 +32,12 @@ Installing these can make problems under Windows -> clone them
 git clone https://github.com/Chris-hughes10/Yolov7-training.git
 git clone https://github.com/cropandweed/cropandweed-dataset.git
 ```
+
+Alternatively my fork:
+```
+https://github.com/Daraan/cropandweed-dataset
+```
+
 Note: Note the currently liknked yolov7 variant is not compatible with half precision training.
 A fork will be added or contact me.
 
@@ -41,7 +52,7 @@ There might be CUDA path problems therefore not putting it into requirements
 pip install deepspeed 
 ```
 
-## Light version
+### Light version
 
 For the .py files a lighter version
 ```
