@@ -58,3 +58,10 @@ For the .py files a lighter version
 ```
 pip install -r pipreqs_requirements.txt 
 ```
+
+
+## Todos:
+
+- Update readme
+- Create fork for half precision support of Yolov7
+- ...
