@@ -244,7 +244,7 @@ def make_augmentations(settings):
                                  brightness=(0.6, 1.4), 
                                  contrast=(0.8, 1.2), 
                                  saturation=(0.7, 1.3), 
-                                 hue=(-0.015, 0.015)), 
+                                 hue=(-0.055, 0.055)), 
                                #A.InvertImg(p=0.2)
                               ], 
                               p=8
@@ -430,4 +430,4 @@ if __name__ == "__main__":
         with open(os.path.join("experiments", file), "r") as f:
             settings = json.load(f)
         train(settings, logname=os.path.splitext(file)[0])
-        break
+

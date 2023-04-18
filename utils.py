@@ -135,20 +135,69 @@ def make_label_box(image, bbox, text, color=(255,0,0),
 )
     pass
 
-def visualize_original_bboxes(cnw_dataset, dataset, 
-                                data_path="./data", *, 
+def visualize_original_bboxes(cnw_dataset, dataset : str, 
+                                data_path : Union[str, os.PathLike] ="./data", *, 
                                 bbox_files : List[str] =None, 
-                                output_dir='./data/visualization', 
-                                save_to_disk=True, 
-                                image_filter=None, **kwargs):
-    """Annotes the original images with the true bounding boxes"""
+                                save_to_disk: bool =True, 
+                                output_dir : Union[str, os.PathLike] ='./data/visualization', 
+                                image_filter : str =None, **kwargs) -> list:
+    """
+    Annotes the original images with the true bounding boxes.
+    
+
+    Parameters
+    ----------
+    cnw_dataset : cnw.datasets.dataset
+        A cnw.datasets.dataset instance that hold information about names and 
+        color mappings.
+    dataset : str
+        Name of the dataset, must be the same as for the cnw_dataset but this
+        does not have that information.
+    data_path : Union[str, os.PathLike], optional
+        Root folder which holds the images and bounding boxes.
+        The default is "./data".
+    
+    ---
+    Keyword only arguments:
+        
+    bbox_files : List[str], optional
+        A list of file names for which the bounding bloxes are to be plotted. 
+        The default is None.
+    save_to_disk : bool, optional
+        Save the generated images to disk. 
+        The default is True.
+    output_dir : Union[str, os.PathLike], optional
+        If save_to_disk is True, where to store them. 
+        The default is './data/visualization'.
+    image_filter : str, optional
+        if bbox_files is None chooses files including this filter in a
+            image_filter in filename 
+        check
+        The default is None.
+    target_width : int, optional
+        Width of the resulting image.
+        The default is 1280 pixels.
+    font_scale : float, optional
+        Scaling of annotation font to be used with cv2.
+        The default is 0.8.
+    pbar : bool, optional.
+        Use a tqdm iterator as progress bar
+        The default is True
+
+    Returns
+    -------
+    list
+        List of plotted image files.
+
+    """
     return np.array(visualize_bboxes(cnw_dataset, images=None, data_path=data_path, plot_true_bboxes=True, bbox_files=bbox_files, predictions=None, dataset=dataset, output_dir=output_dir,
     crop_borders=0, image_filter=image_filter, save_to_disk=save_to_disk, **kwargs))#[:,:,:,[2,1,0]]
     
 
-def image_to_bbox_file(imfile, bbox_path):
+def image_to_bbox_file(imfile, bbox_path, dataset="CropAndWeed"):
     name = os.path.split(imfile)[1]
     return os.path.join(bbox_path,
+                        dataset,
                         os.path.splitext(name)[0]+ ".csv")
     
 
@@ -198,7 +247,7 @@ def visualize_bboxes(cnw_dataset,
     if save_to_disk:
         visualizations_dir = os.path.join(output_dir, dataset)
         os.makedirs(visualizations_dir, exist_ok=True)
-    if predictions is None and bbox_files is None:
+    if predictions is None: # TODO never NONE
         iterator = tqdm(sorted(os.listdir(bboxes_dir))) if pbar else sorted(os.listdir(bboxes_dir))
         assert plot_true_bboxes, "Not bboxes passed and no ground truths"
         predictions = [None] * len(iterator)

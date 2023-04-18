@@ -7,8 +7,9 @@ out.txt
 complete_evaluate.py
 evaluate_all.py
 work_requirements.txt
-.sh
+*.sh
 cropandweed-dataset/
+lightning_logs/experiments/settings-50-epochs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
