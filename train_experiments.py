@@ -47,10 +47,12 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='setup training')
     parser.add_argument('--settings', type=str, default='./settings.json',
                         help='specify file with training specifications')
+    parser.add_argument('--settings-path', type=str, default='./experiments',
+                    help='path to the location of th')
     parser.add_argument('--ckpt_path', required=False,
                     help='Optionally load a checkpoint.')
     parser.add_argument('--no_log', required=False, default=True,
-                    help='Optionally load a checkpoint.')                
+                    help='Do not create checkpoint and log files.')                
 
     args = parser.parse_args()
     return args
@@ -426,6 +428,7 @@ def _experiments_present(file):
 if __name__ == "__main__":
     standard_eval = YOLO_PL.on_validation_epoch_end
     YOLO_PL.on_validation_epoch_end = strict_on_validation_epoch_end
+    
     for file in os.listdir("experiments"):
         print("Checking", file)
         if os.path.exists(os.path.join(".","lightning_logs", "experiments", os.path.splitext(file)[0])):

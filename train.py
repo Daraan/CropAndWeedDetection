@@ -50,9 +50,9 @@ def parse_arguments():
     parser.add_argument('--test_only', required=False, default=False,
                     help='Do only test the checkpointed model')
     parser.add_argument('--logdir', required=False, default="./lightning_logs",
-                    help='Do only test the checkpointed model')
+                    help='Path to store the logfiles')
     parser.add_argument('--logname', required=False, type=str, default=None,
-                    help='Do only test the checkpointed model')                    
+                    help='Name for checkpoint and log file')                    
 
     args = parser.parse_args()
     return args
@@ -70,7 +70,7 @@ def create_trainer(settings, args, logging=True):
         checkpoint_callback = pl.callbacks.ModelCheckpoint(
             #=1,
             dirpath=MODEL_PATH,
-            filename=(logname+"{map:.3f}") or filename,
+            filename=(logname+"{map:.3f}") if logname else filename,
             monitor="map",
             mode="max",
             verbose=1,
