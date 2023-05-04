@@ -47,8 +47,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='setup training')
     parser.add_argument('--settings', type=str, default='./settings.json',
                         help='specify file with training specifications')
-    parser.add_argument('--settings-path', type=str, default='./experiments',
-                    help='path to the location of th')
+    parser.add_argument('--settings_dir', type=str, default='./experiments',
+                    help='path to the location of the setting.json files')
     parser.add_argument('--ckpt_path', required=False,
                     help='Optionally load a checkpoint.')
     parser.add_argument('--no_log', required=False, default=True,
@@ -312,7 +312,7 @@ def strict_on_validation_epoch_end(self):
 
     self.mAP.reset() 
     #strict_valmAP.reset()
- 
+
 def train(settings=None, logname=None):
     args = parse_arguments()
     pprint(args)
@@ -428,8 +428,9 @@ def _experiments_present(file):
 if __name__ == "__main__":
     standard_eval = YOLO_PL.on_validation_epoch_end
     YOLO_PL.on_validation_epoch_end = strict_on_validation_epoch_end
-    
-    for file in os.listdir("experiments"):
+    args = parse_arguments()
+    args.settings_dir
+    for file in os.listdir(args.settings_dir):
         print("Checking", file)
         if os.path.exists(os.path.join(".","lightning_logs", "experiments", os.path.splitext(file)[0])):
             print("path exists", os.path.join("lightning_logs", "experiments", file))
@@ -439,7 +440,7 @@ if __name__ == "__main__":
 
         print(os.path.join("lightning_logs", "experiments", os.path.splitext(file)[0]), "does not exist")
         
-        with open(os.path.join("experiments", file), "r") as f:
+        with open(os.path.join(args.settings_dir, file), "r") as f:
             settings = json.load(f)
         train(settings, logname=os.path.splitext(file)[0])
 
