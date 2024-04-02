@@ -220,7 +220,7 @@ def visualize_bboxes(cnw_dataset,
                             pbar=True # tqdm progress bar
                             ):
     """
-        Visualize bounding boxxes
+        Visualize bounding boxes
         this function is inspired by and partially uses lines from:
         https://github.com/cropandweed/cropandweed-dataset/blob/main/cnw/visualize_annotations.py
         and

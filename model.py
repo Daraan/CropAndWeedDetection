@@ -31,13 +31,14 @@ BACKUP_SEED = 4222 # In case non is set
 # Choose path where the github repository will be cloned to an the cnw folder will be
 CNW_PATH = "./cropandweed-dataset/"
 OPTUNA_DB_PATH = "./OptunaTrials/trials.db"
-MODEL_PATH = os.environ.get("MODEL_PATH", "./workspace/models")
+MODEL_PATH = os.environ.get("MODEL_PATH", "./models")
+
 
 # Path were the downloaded files images, segmentation masks, ... will be
 if os.getcwd().startswith("/ceph") or os.getcwd().startswith("/pfs"): # dws or bw server 
     DATA_PATH = os.path.join(CNW_PATH, "data")
 else:
-    DATA_PATH =r"../data"
+    DATA_PATH =r"./data"
 
 IMAGES_PATH = os.path.join(DATA_PATH, "images")
 
@@ -477,11 +478,15 @@ class CropAndWeedDataModule(pl.LightningDataModule):
             elif os.path.exists(self.data_dir):
                 print("Data path already exists. Skipping download and mask generation. No integrity check was performed.")
                 return
-        print("Cloning github repository for data aquisition")
+        print("Cloning github repository for data acquisition")
         os.system(" ".join(["git clone", "https://github.com/cropandweed/cropandweed-dataset.git", repository_path]))
         print("Downloading data. This can take a while.")
         from cnw import setup
-        setup.setup(self.data_dir, with_mapping)
+        if isinstance(self.data_dir, str):
+            setup.setup(self.data_dir, with_mapping)
+        else: #dict of paths
+            print("Print ignoring data setup for now")
+        
      
 
     def setup(self, stage : str="fit"):
@@ -660,6 +665,7 @@ class YOLO_PL(pl.LightningModule):
                                                           + settings["dataset"]["use_extra_class"]), 
                                              pretrained=settings["model"]["pretrained"])
         except AttributeError:
+            # NOTE: There is sometimes an Attribute error that can be solved in repeating the process:
             self.model = create_yolov7_model(settings["model"]["name"], 
                                                  num_classes=( len( DATASETS[settings["dataset"]["name"]].get_label_ids() ) 
                                                               + settings["dataset"]["use_extra_class"]), 
