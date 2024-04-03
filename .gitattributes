@@ -1,0 +1,3 @@
+models/ filter=lfs diff=lfs merge=lfs -text
+models/CropsOrWeed9_1280px_yolov7-e6_epoch=29_lr=_batch=16_val_loss=3.281_map=0.763.ckpt filter=lfs diff=lfs merge=lfs -text
+models/CropsOrWeed9_640px_yolov7x_epoch=47_lr=_batch=16_val_loss=4.576_map=0.789.ckpt filter=lfs diff=lfs merge=lfs -text
