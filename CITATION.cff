@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Crop and Weed Detection - Evaluating YOLOv7 for Precision Agriculture"
+abstract: "Object detection and hyperparameter evaluation on various crops and weeds to evaluate the YOLOv7 architecture as a foundation for precision agriculture."
+authors:
+- family-names: "Sperber"
+  given-names: "Daniel"
+version: 1.0.2
+date-released: 2023-04-17
+url: "https://github.com/Daraan/CropAndWeedDetection"
+repository-code: "https://github.com/Daraan/CropAndWeedDetection"
+keywords:
+  - precision agriculture
+  - object detection
+  - YOLO
+  - machine learning
+  - deep learning
