@@ -2,4 +2,5 @@
 	path = cropandweed-dataset
 	url = https://github.com/Daraan/cropandweed-dataset
 [submodule "Yolov7-training"]
+	path = Yolov7-training
 	url = https://github.com/Chris-hughes10/Yolov7-training
