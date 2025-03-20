@@ -2,7 +2,7 @@ import csv
 import os
 import warnings
 from collections import defaultdict
-from typing import Any, List, Optional, Union, TYPE_CHECKING
+from typing import Any, List, Literal, Optional, Union, TYPE_CHECKING
 
 import cv2
 import numpy as np
@@ -104,6 +104,7 @@ def plot_predictions(model, dataloader, DATASET, max_detections=2, multiple_labe
     import torch
     from cnw.utilities.datasets import DATASETS
     import utils
+
     DATA_PATH = "outputs"
 
     images, labels, image_id, image_size = next(iter(dataloader))
@@ -160,10 +161,10 @@ def visualize_original_bboxes(
     dataset: str,
     data_path: Union[str, os.PathLike] = "./data",
     *,
-    bbox_files: List[str] = None,
+    bbox_files: Optional[List[str]] = None,
     save_to_disk: bool = True,
     output_dir: Union[str, os.PathLike] = "./data/visualization",
-    image_filter: str = None,
+    image_filter: Optional[str] = None,
     **kwargs,
 ) -> list:
     """
@@ -219,12 +220,12 @@ def visualize_original_bboxes(
         visualize_bboxes(
             cnw_dataset,
             images=None,
-            data_path=data_path,
+            data_path=data_path,  # type: ignore
             plot_true_bboxes=True,
             bbox_files=bbox_files,
             predictions=None,
             dataset=dataset,
-            output_dir=output_dir,
+            output_dir=output_dir,  # type: ignore
             crop_borders=0,
             image_filter=image_filter,
             save_to_disk=save_to_disk,
@@ -250,13 +251,13 @@ def visualize_bboxes(
     plot_true_bboxes=False,  # Not compatible with augmentation!
     data_path="./data",
     dataset="CropAndWeed",
-    output_dir="./data/visualization",
+    output_dir: Optional[str] = "./data/visualization",
     crop_borders=0,
     font_scale=0.8,
     target_width=1280,
     image_filter: Optional[str] = None,  # has only and effect if bboxes=true,
     save_to_disk=True,
-    mask_root: bool = False,
+    mask_root: Union[str, Literal[False], None] = False,
     pbar=True,  # tqdm progress bar
 ) -> list["NDArray"]:
     """
@@ -284,6 +285,7 @@ def visualize_bboxes(
     if mask_root:
         label_ids_dir = os.path.join(mask_root, dataset)
     if save_to_disk:
+        assert output_dir is not None, "output_dir must be set if save_to_disk is True"
         visualizations_dir = os.path.join(output_dir, dataset)
         os.makedirs(visualizations_dir, exist_ok=True)
     if predictions is None and bbox_files[0] is None:
@@ -301,7 +303,7 @@ def visualize_bboxes(
             if "Eval" not in file:  # TODO: This could lead to buggs
                 path, name = os.path.split(file)
                 r = os.path.join(path + "Eval", name)
-            print("changes file is", f)
+            print("changes file is", file)
             return r
 
         iterator = map(splitter, bbox_files)
@@ -397,7 +399,7 @@ def visualize_bboxes(
             image = image[crop_borders // 2 : -crop_borders // 2]
         # Resize image
         target_size = (int(target_width * 1), int(image.shape[0] * (target_width * 1 / image.shape[1])))
-        image = cv2.resize(image, target_size, cv2.INTER_LINEAR)
+        image = cv2.resize(image, target_size, cv2.INTER_LINEAR)  # type: ignore
 
         # Write image path
         cv2.putText(
@@ -411,21 +413,21 @@ def visualize_bboxes(
             lineType=font_line_type,
         )
         if plot_true_bboxes and pred is not None:
-            trueimage = cv2.resize(trueimage, target_size, cv2.INTER_LINEAR)
+            trueimage = cv2.resize(trueimage, target_size, cv2.INTER_LINEAR)  # type: ignore
             image = cv2.hconcat([image, trueimage])
 
         # For segmentation
         if mask_root:
             # TODO
             raise NotImplementedError("Part needs some update")
-            label_ids_path = os.path.join(label_ids_dir, f"{target}.png")
+            # label_ids_path = os.path.join(label_ids_dir, f"{target}.png")
 
-            label_layer = (
-                cv2.resize(ids2colors(cv2.imread(label_ids_path, 0), cnw_dataset), target_size, cv2.INTER_LINEAR)
-                if os.path.exists(label_ids_path)
-                else np.zeros((target_size[1], target_size[0], 3), dtype=np.uint8)
-            )
-            image = cv2.vconcat([image, label_layer])
+            # label_layer = (
+            #    cv2.resize(ids2colors(cv2.imread(label_ids_path, 0), cnw_dataset), target_size, cv2.INTER_LINEAR)
+            #    if os.path.exists(label_ids_path)
+            #    else np.zeros((target_size[1], target_size[0], 3), dtype=np.uint8)
+            # )
+            # image = cv2.vconcat([image, label_layer])
 
         ((_, text_height), _) = cv2.getTextSize("dummy", font, font_scale * 1.25, FONT_THICKNESS + 1)
         image = cv2.copyMakeBorder(image, 0, text_height + 18, 0, 0, cv2.BORDER_CONSTANT, value=[0, 0, 0])
@@ -455,5 +457,5 @@ def visualize_bboxes(
         written_images.append(image)
         # return written_images
     if pbar:
-        iterator.close()
+        iterator.close()  # type: ignore[attr-defined]
     return written_images

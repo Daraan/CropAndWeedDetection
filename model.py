@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from functools import wraps
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import warnings
 from typing_extensions import Literal
 
@@ -29,7 +29,6 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from tqdm import tqdm
 from yolov7 import create_yolov7_loss, create_yolov7_model
 from yolov7.models.yolo import Yolov7Model
-from yolov7.trainer import filter_eval_predictions
 
 import utils
 
@@ -59,8 +58,8 @@ if CNW_PATH not in sys.path:
     sys.path.append(CNW_PATH)  # folder contains hypen so using this workaround
     sys.path.append(CNW_PATH + "/cnw")
 
-import cnw  # fmt: skip
-from cnw.utilities.datasets import DATASETS  # fmt: skip
+import cnw  # fmt: skip  # noqa
+from cnw.utilities.datasets import DATASETS  # fmt: skip  # noqa: E402
 
 sys.path.append("./Yolov7-training")
 
@@ -90,8 +89,8 @@ class CropDataset(torchvision.datasets.VisionDataset):
         self,
         root: Union[str, Dict[str, str]] = DATA_PATH,
         *,
-        dataset,
-        stage: Literal["test", "validation", "train"],
+        dataset: str,
+        stage: Literal["test", "val", "train"],
         image_size: Tuple[int, int],
         stack2_images: bool,
         train_val_test_indices: Optional[Dict[str, List[int]]] = None,  # manually choose which indices to use;
@@ -117,7 +116,12 @@ class CropDataset(torchvision.datasets.VisionDataset):
         target_transform (callable, optional) - A function/transform that takes in
             the target and transforms it.
         """
-        super().__init__(root, transforms, transform, target_transform)
+        super().__init__(
+            root,  # type: ignore[arg-type]  # dict should be fine
+            transforms,
+            transform,
+            target_transform,
+        )
         self.dataset = dataset
         self.stage = stage
         self.normalize_images = normalize_images
@@ -241,18 +245,21 @@ class CropDataset(torchvision.datasets.VisionDataset):
         return DATASETS["CropAndWeed"].get_label_name(label_id)
 
     def get_bbox_color(self, label_id):
-        return DATASETS[self.settings["dataset"]["name"]].get_label_color(label_id)
-        mapped_id = DATASETS[DATASET].get_mapped_id(label_id)
-        return DATASETS[DATASET].get_label_color(mapped_id)
+        try:
+            return DATASETS[self.dataset].get_label_color(label_id)
+        except Exception as e:
+            mapped_id = DATASETS[self.dataset].get_mapped_id(label_id)
+            return DATASETS[self.dataset].get_label_color(mapped_id)
 
     def __len__(self):
         return len(self.indices[self.stage])
 
     # Evaluate during compilation
     if BBOX_PARAMS.format == "pascal_voc":
+        # TODO: Add some sort of dynamic branching
 
         @staticmethod
-        def load_bbox(path):
+        def load_bbox(path):  # pyright: ignore[reportRedeclaration]
             bbox = np.loadtxt(path, delimiter=",", dtype=np.int32).reshape(-1, 7)
             return bbox[:, 4], bbox[:, :4]  # label, bbox
     else:
@@ -291,10 +298,10 @@ class CropDataset(torchvision.datasets.VisionDataset):
         )
         image_stack[0] = image
         try:
-            for idx, file in enumerate(tqdm(self.images[1:]), 1):
+            for idx, _file in enumerate(tqdm(self.images[1:]), 1):
                 image_stack[idx] = cv2.imread(self.images[idx])
         except BaseException as e:
-            print("WARNING: Images not cached")
+            print("WARNING: Images not cached because of", e)
             raise
         self.cached_images = image_stack
 
@@ -321,6 +328,13 @@ class CropDataset(torchvision.datasets.VisionDataset):
 
         if self.stage != "train":
             # Return without stacking two images, transform should be resizing&ToTensor
+            if self.target_transform is None:
+                return (
+                    image,
+                    labels,
+                    torch.as_tensor(index),
+                    torch.as_tensor(self.image_size),
+                )  # height x width (array format)
             transformed = self.target_transform(
                 image=np.asarray(image, np.float32) / 255,  # bring into 0...1 range
                 # mask=mask,
@@ -356,13 +370,18 @@ class CropDataset(torchvision.datasets.VisionDataset):
         )
         del full_img
         # TODO join transforms else overhead in bbox format conversions
+        if self.target_transform is None:
+            return (
+                down_transforms["image"],
+                down_transforms["class_labels"],
+                torch.as_tensor(index),
+                torch.as_tensor(self.image_size),
+            )
         transformed = self.target_transform(**down_transforms)
         return self._format_transformed(transformed, index)
 
     def _getitem_normal(self, index):
-        """
-        Bounding box logic: Left, Top, Right, Bottom, Label ID, Stem X, Stem Y
-        """
+        """Bounding box logic: Left, Top, Right, Bottom, Label ID, Stem X, Stem Y"""
         image = cv2.imread(self.images[index])
         # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # Theoretically RGB not necessary, some overhead
         # SEGMENTATION:
@@ -388,7 +407,7 @@ class CropDataset(torchvision.datasets.VisionDataset):
             # if mask.dtype != torch.int64:
             #    mask = mask.to(torch.int64)
             return self._format_transformed(transformed, index)
-        return self._format_transformed({"image": image, "bboxes": bboxes, "class_labels": labels}, index)
+        return self._format_transformed({"image": image, "bboxes": bbox, "class_labels": labels}, index)
 
     def _format_transformed(self, transformed, index):
         image = transformed["image"][[2, 1, 0]]  # Swap channel order cv2.COLOR_BGR2RGB
@@ -438,8 +457,8 @@ class CropDataset(torchvision.datasets.VisionDataset):
         # todo: add (or reason why not to add them, parallelization issues?) indices instead
         images, labels, indices, image_sizes = zip(*batch)
 
-        for i, l in enumerate(labels):
-            l[:, 0] = i  # add target image index for build_targets() in loss fn
+        for i, label in enumerate(labels):
+            label[:, 0] = i  # add target image index for build_targets() in loss fn
         return (
             torch.stack(images, 0),
             torch.cat(labels, 0),
@@ -468,7 +487,7 @@ class CropAndWeedDataModule(pl.LightningDataModule):
         train_transform,
         test_transform,
         stack2_images,
-        train_val_test_ratio=[0.7, 0.15, 0.15],
+        train_val_test_ratio=(0.7, 0.15, 0.15),
         half_precision=False,
         cache_images=False,
         cache_bboxes=False,
@@ -508,14 +527,16 @@ class CropAndWeedDataModule(pl.LightningDataModule):
                 # Same path we can check:
                 if os.path.exists(self.data_dir["bboxes"]) and os.path.exists(self.data_dir["images"]):
                     print(
-                        "Data paths already exists. Skipping download and mask generation. No integrity check was performed."
+                        "Data paths already exists. Skipping download and mask generation. "
+                        "No integrity check was performed."
                     )
                     return
                 # One path does not exist
                 # Check if it the same path (we can handle) else raise error
                 if self.data_dir["bboxes"] != self.data_dir["images"]:
                     raise FileNotFoundError(
-                        "Image and BBox path differ but one does not exist. Please specify one path only to download files or check the passed paths",
+                        "Image and BBox path differ but one does not exist. "
+                        "Please specify one path only to download files or check the passed paths",
                         self.data_dir["bboxes"],
                         self.data_dir["images"],
                     )
@@ -532,14 +553,21 @@ class CropAndWeedDataModule(pl.LightningDataModule):
         from cnw import setup
 
         if isinstance(self.data_dir, str):
-            setup.setup(self.data_dir, with_mapping)
+            try:
+                # old version of submodule
+                setup.setup(self.data_dir, with_mapping)  # type: ignore
+            except AttributeError:
+                setup(self.data_dir, with_mapping)
+            except Exception as e:
+                print(f"Error during setup: {e}")
         else:  # dict of paths
             print("Print ignoring data setup for now")
 
     def setup(self, stage: str = "fit"):
         # Gather files and do train test val split
         if self.indices is None:
-            self.all_bboxes = CropDataset.get_files(self, path=self.bbox_root)  # bbox/dataset will be appended
+            # bbox/dataset will be appended
+            self.all_bboxes = CropDataset.get_files(self, path=self.bbox_root)  # type: ignore[arg-type] same interface
             image_dir = os.path.join(self.image_root, "images")
             self.all_images = np.asarray(
                 [os.path.join(image_dir, os.path.basename(file)[:-4] + ".jpg") for file in self.all_bboxes], dtype=str
@@ -592,7 +620,7 @@ class CropAndWeedDataModule(pl.LightningDataModule):
                 self.data_train._init_caches()
 
         # No augmentation here
-        if stage == "fit" or stage == "validate" or stage == "val" or stage == None:
+        if stage == "fit" or stage == "validate" or stage == "val" or stage is None:
             if not hasattr(self, "data_val"):
                 self.data_val = CropDataset(
                     self.data_dir,
@@ -612,11 +640,11 @@ class CropAndWeedDataModule(pl.LightningDataModule):
                 # For assertion set _init_files=True
                 # assert self.data_val.images == self.all_images[self.indices['val']]
                 # assert self.data_val.masks  == self.all_masks[self.indices['val']]
-                # assert self.data_val.bboxes ==  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_val.masks ]
+                # assert self.data_val.bboxes ==  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_val.masks ]  # noqa: E501
 
                 self.data_val.images = self.all_images[self.indices["val"]]
                 # self.data_val.masks = self.all_masks[self.indices['val']]
-                # self.data_val.bboxes =  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_val.masks ]
+                # self.data_val.bboxes =  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_val.masks ]  # noqa: E501
                 self.data_val.bboxes = self.all_bboxes[self.indices["val"]]
                 self.data_val.indices = self.indices
                 self.data_val._init_caches()
@@ -640,11 +668,11 @@ class CropAndWeedDataModule(pl.LightningDataModule):
             # For assertion set _init_files=True
             # assert self.data_test.images == self.all_images[self.indices['test']]
             # assert self.data_test.masks  == self.all_masks[self.indices['test']]
-            # assert self.data_test.bboxes ==  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_test.masks ]
+            # assert self.data_test.bboxes == [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_test.masks ]
 
             self.data_test.images = self.all_images[self.indices["test"]]
             # self.data_test.masks = self.all_masks[self.indices['test']]
-            # self.data_test.bboxes =  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_test.masks ]
+            # self.data_test.bboxes = [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.data_test.masks ]
             self.data_test.bboxes = self.all_bboxes[self.indices["test"]]
             self.data_test.indices = self.indices
 
@@ -689,16 +717,16 @@ class CropAndWeedDataModule(pl.LightningDataModule):
 
     def check_dataloaders(self):
         # Setup the variables
-        if not hasattr(self, "data_train") or self.data_train is None:
+        if not hasattr(self, "data_train") or self.data_train is None:  # pyright: ignore[reportUnnecessaryComparison]
             self.setup()
-        if not hasattr(self, "data_test") or self.data_test is None:
+        if not hasattr(self, "data_test") or self.data_test is None:  # pyright: ignore[reportUnnecessaryComparison]
             self.setup("test")
+        # Change variables for testing
+        real_batchsize = self.batch_size
+        real_numworkers = self.num_workers
+        self.num_workers = 0
+        self.batch_size = 5
         try:
-            # Change variables for testing
-            real_batchsize = self.batch_size
-            real_numworkers = self.num_workers
-            self.num_workers = 0
-            self.batch_size = 5
             return self.train_dataloader(), self.val_dataloader(), self.test_dataloader()
         finally:
             # reset variables
@@ -750,12 +778,12 @@ class YOLO_PL(pl.LightningModule):
 
         if settings["model"].get("load_anchors", False):
             anchorparam = settings["model"]["load_anchors"]
-            if anchorparam == True:  # auto
+            if anchorparam is True:  # auto
                 try:
                     anchors = torch.load("./anchors/new_anchors_" + settings["model"]["name"] + ".pt").detach()
                     anchors.requires_grad = False
                     self.update_anchors(anchors)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     print(e, "\n^^^^^^^^^^^^\n", "Cannot update anchors")
             elif isinstance(anchorparam, str):
                 self.update_anchors(torch.load(anchorparam).detach())  # path
@@ -785,7 +813,7 @@ class YOLO_PL(pl.LightningModule):
 
     @wraps(Yolov7Model.postprocess)
     def postprocess(self, *args, **kwargs):
-        return self.model.postprocess(args, kwargs)
+        return self.model.postprocess(*args, **kwargs)
 
     def on_fit_start(self):
         self.loss_func.to(self.device)
@@ -837,7 +865,7 @@ class YOLO_PL(pl.LightningModule):
             {"boxes": labels[(idx := labels[:, 0] == i), 2:], "labels": labels[idx, 1]}
             for i in range(len(filtered_preds))
         ]
-        pred_lists = [None] * len(filtered_preds)
+        pred_lists: list[dict[str, Any]] = [None] * len(filtered_preds)  # type: ignore[assignment]
         for i, pred in enumerate(filtered_preds):  # len of batch_size
             pred = pred[pred[:, 4] > self.settings["mAP"]["nms_threshold"]].detach()
 
@@ -885,7 +913,7 @@ class YOLO_PL(pl.LightningModule):
     def _log_images(self, images, labels, image_id, predictions):
         # plot 10 bounding boxes with highest confidence
         # TODO. this relies on lost code and has not yet been restored
-        figures = []
+        # figures = []
         IDX = slice(4)
         pred = self.model.postprocess(predictions, conf_thres=0.00, max_detections=30, multiple_labels_per_box=False)
 
@@ -898,6 +926,7 @@ class YOLO_PL(pl.LightningModule):
         # print("Images shape", images.shape)
         # imgs = np.ascontiguousarray(.permute(0, 2,3,1).cpu()) # old method
 
+        assert self.trainer.val_dataloaders
         bbox_files = [
             os.path.split(f)[1] for f in self.trainer.val_dataloaders.dataset.bboxes[image_id[IDX].cpu()]
         ]  # filenames to to true bounding boxes
@@ -925,7 +954,8 @@ class YOLO_PL(pl.LightningModule):
             nrow=2,
         )
         # Turn into HxWxC
-        self.logger.experiment.add_image("val_bboxes", grid.permute(1, 2, 0), self.current_epoch, dataformats="HWC")
+        if self.logger:
+            self.logger.experiment.add_image("val_bboxes", grid.permute(1, 2, 0), self.current_epoch, dataformats="HWC")  # pyright: ignore[reportAttributeAccessIssue]
 
     def validation_step(self, batch, batch_idx):
         images, labels, image_id, image_size = batch
@@ -942,7 +972,7 @@ class YOLO_PL(pl.LightningModule):
         self.update_map(labels, preds, self.mAP)
         return loss
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx):  # noqa: ARG002
         images, labels, image_id, image_size = batch
         preds = self.model(images)
         loss, _ = self.loss_func(fpn_heads_outputs=preds, targets=labels, images=images)
@@ -991,10 +1021,11 @@ class YOLO_PL(pl.LightningModule):
             update_func = self.model.update_anchors  # got renamed
         except AttributeError:
             update_func = self.model.update_model_anchors
-        update_func(anchors)
+        update_func(anchors)  # type: ignore
 
     def configure_optimizers(self):
-        steps_per_epoch = len(self.trainer.datamodule.data_train.images) // self.settings["dataset"]["batch_size"] + 1
+        assert hasattr(self.trainer, "datamodule")
+        steps_per_epoch = len(self.trainer.datamodule.data_train.images) // self.settings["dataset"]["batch_size"] + 1  # type: ignore[attr-defined]
         if self.settings["optimizer"]["weight_decay"] == "auto":
             self.settings["dataset"]["accumulate_batch_size"]
             num_accumulate_steps = max(
@@ -1025,7 +1056,7 @@ class YOLO_PL(pl.LightningModule):
                 {"params": param_groups["conv_weights"], "weight_decay": self.settings["optimizer"]["weight_decay"]}
             )
         elif self.settings["optimizer"]["name"] == "DeepSpeedCPUAdam":
-            optimizer = DeepSpeedCPUAdam(
+            optimizer = DeepSpeedCPUAdam(  # pyright: ignore[reportPossiblyUnboundVariable]
                 param_groups["other_params"],
                 lr=self.settings["optimizer"]["learning_rate"],
                 betas=(0.937, 0.999),
@@ -1035,7 +1066,7 @@ class YOLO_PL(pl.LightningModule):
                 {"params": param_groups["conv_weights"], "weight_decay": self.settings["optimizer"]["weight_decay"]}
             )
         elif self.settings["optimizer"]["name"] == "FusedAdam":
-            optimizer = FusedAdam(
+            optimizer = FusedAdam(  # pyright: ignore[reportPossiblyUnboundVariable]
                 param_groups["other_params"],
                 lr=self.settings["optimizer"]["learning_rate"],
                 betas=(0.937, 0.999),
@@ -1050,12 +1081,12 @@ class YOLO_PL(pl.LightningModule):
 
         # """
         # optimizer = torch.optim.RAdam(self.parameters(),
-        #                              lr=(self.settings["optimizer"]["learning_rate"]
-        #                                  * ((1/self.settings["lr_scheduler"]["warmup_multiplier"]
-        #                                      )** self.settings["lr_scheduler"]["warmup_epochs"])), # scale down for warmup
-        #                              eps=1e-08,
-        #                              betas= (0.937, 0.999),
-        #                              weight_decay=self.settings["optimizer"]["weight_decay"])
+        #     lr=(self.settings["optimizer"]["learning_rate"]
+        #         * ((1/self.settings["lr_scheduler"]["warmup_multiplier"]
+        #         )** self.settings["lr_scheduler"]["warmup_epochs"])), # scale down for warmup
+        #     eps=1e-08,
+        #     betas=(0.937, 0.999),
+        #     weight_decay=self.settings["optimizer"]["weight_decay"])
         # """
 
         # lr_scheduler = CosineLrScheduler(optimizer,
@@ -1071,7 +1102,8 @@ class YOLO_PL(pl.LightningModule):
             lr_scheduler = OneCycleLR(
                 optimizer,
                 max_lr=self.settings["optimizer"]["learning_rate"],
-                # NOTE: TODO: self.trainer.estimated_stepping_batches is better here but not compatible with the current caching setup
+                # NOTE: TODO: self.trainer.estimated_stepping_batches is better here
+                # but, not compatible with the current caching setup
                 # Probably a bug in lightning sets up the dataset twice :/
                 # total_steps=self.trainer.estimated_stepping_batches,
                 steps_per_epoch=steps_per_epoch,
@@ -1095,6 +1127,11 @@ class YOLO_PL(pl.LightningModule):
             milestones=self.settings["lr_scheduler"]["milestones"],
             gamma=self.settings["lr_scheduler"]["milestone_multiplier"],
         )  # warmup
-        scheduler3 = CosineAnnealingLR(optimizer, self.trainer.max_epochs, eta_min=0, last_epoch=-1)
+        scheduler3 = CosineAnnealingLR(
+            optimizer,
+            T_max=self.trainer.max_epochs if self.trainer.max_epochs is not None else 500,
+            eta_min=0,
+            last_epoch=-1,
+        )
         lr_scheduler = ChainedScheduler([scheduler1, scheduler2, scheduler3])
         return [optimizer], [lr_scheduler]
