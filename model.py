@@ -1,31 +1,44 @@
-import sys
-import os
 import glob
+import logging
+import os
+import sys
 import time
 from functools import wraps
-from tqdm import tqdm
+from typing import Callable, Dict, List, Optional, Tuple, Union
+import warnings
+from typing_extensions import Literal
+
+import albumentations as A
+import cv2
 import numpy as np
-
-from typing import Union, List, Dict, Tuple
-
-import torch
-from torch.utils.data import DataLoader, Dataset, random_split
-import torchvision
-import torchmetrics
-
 import pytorch_lightning as pl
+import torch
+import torchvision
+
+# from ultralytics.yolo.utils.loss import BboxLoss
+from torch.optim.lr_scheduler import (
+    ChainedScheduler,
+    CosineAnnealingLR,
+    MultiStepLR,
+    OneCycleLR,
+    ReduceLROnPlateau,
+    SequentialLR,
+)
+from torch.utils.data import DataLoader
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from tqdm import tqdm
+from yolov7 import create_yolov7_loss, create_yolov7_model
+from yolov7.models.yolo import Yolov7Model
+from yolov7.trainer import filter_eval_predictions
+
+import utils
 
 try:
     from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 except ModuleNotFoundError as e:
     print(e, "\n")
 
-
-from PIL import Image
-import cv2
-import matplotlib.pyplot as plt
-
-import albumentations as A
+logger = logging.getLogger(__name__)
 
 BACKUP_SEED = 4222  # In case non is set
 
@@ -33,7 +46,6 @@ BACKUP_SEED = 4222  # In case non is set
 CNW_PATH = "./cropandweed-dataset/"
 OPTUNA_DB_PATH = "./OptunaTrials/trials.db"
 MODEL_PATH = os.environ.get("MODEL_PATH", "./models")
-
 
 # Path were the downloaded files images, segmentation masks, ... will be
 if os.getcwd().startswith("/ceph") or os.getcwd().startswith("/pfs"):  # dws or bw server
@@ -47,29 +59,10 @@ if CNW_PATH not in sys.path:
     sys.path.append(CNW_PATH)  # folder contains hypen so using this workaround
     sys.path.append(CNW_PATH + "/cnw")
 
-import cnw
-from cnw.utilities.datasets import DATASETS
-
-import utils
-
-# fore developement
-from utils import visualize_bbox
+import cnw  # fmt: skip
+from cnw.utilities.datasets import DATASETS  # fmt: skip
 
 sys.path.append("./Yolov7-training")
-# from ultralytics.yolo.utils.loss import BboxLoss
-from yolov7 import create_yolov7_model, create_yolov7_loss
-from yolov7.trainer import filter_eval_predictions
-from yolov7.models.yolo import Yolov7Model
-
-from torch.optim.lr_scheduler import (
-    CosineAnnealingLR,
-    MultiStepLR,
-    ChainedScheduler,
-    ReduceLROnPlateau,
-    SequentialLR,
-    OneCycleLR,
-)
-from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 BBOX_PARAMS = A.BboxParams(
     format="pascal_voc",  # Left, Top, Right, Bottom
@@ -95,33 +88,33 @@ class CropDataset(torchvision.datasets.VisionDataset):
 
     def __init__(
         self,
-        root=DATA_PATH,
+        root: Union[str, Dict[str, str]] = DATA_PATH,
         *,
         dataset,
-        stage: Union["test", "valiation", "train"],
-        image_size,
-        stack2_images,
-        train_val_test_indices: Dict[str, List[int]] = None,  # manually choose which indices to use;
-        train_val_test_ratio=(0.7, 0.15, 0.15),
-        transforms=None,
-        transform=None,
-        target_transform=None,
-        normalize_images=False,
-        half_precision=False,
-        cache_bboxes=False,
-        cache_images=False,
+        stage: Literal["test", "validation", "train"],
+        image_size: Tuple[int, int],
+        stack2_images: bool,
+        train_val_test_indices: Optional[Dict[str, List[int]]] = None,  # manually choose which indices to use;
+        train_val_test_ratio: Tuple[float, float, float] = (0.7, 0.15, 0.15),
+        transforms: Optional[Callable] = None,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        normalize_images: bool = False,
+        half_precision: bool = False,
+        cache_bboxes: bool = False,
+        cache_images: bool = False,
         _init_files=True,  # Set files by dataloader globally, for less overhead.
-        seed=None,
+        seed: Optional[int] = None,
     ):  # should be set in the transformations!):
         """
         From documentation:
-        transforms (callable, optional) – A function/transforms that takes in an image
+        transforms (callable, optional) - A function/transforms that takes in an image
             and a label and returns the transformed versions of both.
 
-        transform (callable, optional) – A function/transform that takes in an PIL image
+        transform (callable, optional) - A function/transform that takes in an PIL image
             and returns a transformed version. E.g, transforms.RandomCrop
 
-        target_transform (callable, optional) – A function/transform that takes in
+        target_transform (callable, optional) - A function/transform that takes in
             the target and transforms it.
         """
         super().__init__(root, transforms, transform, target_transform)
@@ -199,7 +192,7 @@ class CropDataset(torchvision.datasets.VisionDataset):
 
             # self.bboxes =  [os.path.join(bbox_dir, os.path.basename(file)[:-4]+".csv") for file in self.masks ]
             self.bboxes = self.all_bboxes[self.indices[self.stage]]
-            _init_caches(self)
+            self._init_caches()
 
     def _init_caches(self):
         try:
@@ -469,8 +462,8 @@ class CropAndWeedDataModule(pl.LightningDataModule):
         *,
         seed=BACKUP_SEED,
         eval_batch_scale=2,
-        batch_size,
-        num_workers,
+        batch_size: int,
+        num_workers: int,
         image_size,
         train_transform,
         test_transform,
@@ -535,7 +528,7 @@ class CropAndWeedDataModule(pl.LightningDataModule):
                 return
         print("Cloning github repository for data acquisition")
         os.system(" ".join(["git clone", "https://github.com/cropandweed/cropandweed-dataset.git", repository_path]))
-        print("Downloading data. This can take a while.")
+        print("Downloading data. This can take a while. Note, that steps 2-5 are slower.")
         from cnw import setup
 
         if isinstance(self.data_dir, str):
@@ -1051,6 +1044,9 @@ class YOLO_PL(pl.LightningModule):
             optimizer.add_param_group(
                 {"params": param_groups["conv_weights"], "weight_decay": self.settings["optimizer"]["weight_decay"]}
             )
+        else:
+            logger.warning("Using unsupported optimizer, this might cause errors")
+            optimizer = self.settings["optimizer"]["name"]
 
         # """
         # optimizer = torch.optim.RAdam(self.parameters(),

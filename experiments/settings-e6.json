@@ -3,7 +3,7 @@
         "name": "yolov7-e6",
         "pretrained": true,
         "freeze": false,
-		"weight_path" : "CropsOrWeed9_1280px_yolov7-e6_epoch=35_lr=_batch=16_val_loss=2.049_map=0.763-last.ckpt",
+		"weight_path" : false,
 		"weight_dataset": "CropsOrWeed9",
 		"load_anchors" : true
     },
@@ -47,6 +47,7 @@
             1280
         ],
         "stack2_images": true,
+        "normalize_images" : false,
         "seed": 4222
     },
     "mAP": {
@@ -70,7 +71,6 @@
 			"train_micro_batch_size_per_gpu" : "batch_size",
 			"zero_optimization": {
 				"stage": 2,
-				"offload_optimizer": true,
 				"allgather_bucket_size": 5e8,
 				"reduce_bucket_size": 5e8,
 				"offload_optimizer": {

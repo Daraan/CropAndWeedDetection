@@ -1,17 +1,16 @@
+import csv
 import os
 import warnings
-import numpy as np
-from tqdm import tqdm
 from collections import defaultdict
+from typing import Any, List, Optional, Union, TYPE_CHECKING
 
+import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
-from typing import Union, Literal, List
-import cv2
-import csv
-
-import matplotlib.pyplot as plt
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 FONT_THICKNESS = 1
@@ -46,9 +45,9 @@ def plot_masked_image(*args, **kwargs):
     pass
 
 
-def extract_statistics(dataset):
+def extract_statistics(dataset: Any):
     """Extract mean and standard deviations for each color channel from an iterable dataset"""
-    # This is saldy a code that also was lost
+    # This is sadly a code that also was lost
     # what it did was calculating a running mean and running variance for batch inputs.
     # The formula that was used originates from here:
     # https://math.stackexchange.com/a/2971563
@@ -68,7 +67,7 @@ def check_worker_count(requested_workers) -> int:
         try:
             max_num_worker_suggest = len(os.sched_getaffinity(0))
             cpuset_checked = True
-        except Exception:
+        except Exception:  # noqa
             pass
     if max_num_worker_suggest is None:
         # os.cpu_count() could return Optional[int]
@@ -102,6 +101,11 @@ def plot_predictions(model, dataloader, DATASET, max_detections=2, multiple_labe
         this function is here only to demonstrate how the below function works
         but cannot be used from within utils!
     """
+    import torch
+    from cnw.utilities.datasets import DATASETS
+    import utils
+    DATA_PATH = "outputs"
+
     images, labels, image_id, image_size = next(iter(dataloader))
     bbox_files = dataloader.dataset.bboxes[image_id]
     with torch.no_grad():
@@ -211,7 +215,7 @@ def visualize_original_bboxes(
         List of plotted image files.
 
     """
-    return np.array(
+    return np.array(  # type: ignore
         visualize_bboxes(
             cnw_dataset,
             images=None,
@@ -239,9 +243,9 @@ DEBUG = False
 
 def visualize_bboxes(
     cnw_dataset,
-    images: list,
-    bbox_files: list,
-    predictions: list = None,  # plot true bounding boxes or pass them
+    images: Optional[list],
+    bbox_files: Optional[list],
+    predictions: Optional[list] = None,  # plot true bounding boxes or pass them
     *,
     plot_true_bboxes=False,  # Not compatible with augmentation!
     data_path="./data",
@@ -250,11 +254,11 @@ def visualize_bboxes(
     crop_borders=0,
     font_scale=0.8,
     target_width=1280,
-    image_filter: str = None,  # has only and effect if bboxes=true,
+    image_filter: Optional[str] = None,  # has only and effect if bboxes=true,
     save_to_disk=True,
-    mask_root: bool = None,
+    mask_root: bool = False,
     pbar=True,  # tqdm progress bar
-):
+) -> list["NDArray"]:
     """
     Visualize bounding boxes
     this function is inspired by and partially uses lines from:
@@ -262,7 +266,6 @@ def visualize_bboxes(
     and
     https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/
     """
-
     # if dataset not in datasets.DATASETS:
     #    raise RuntimeError(f'dataset {dataset} not defined in datasets.py')
     if bbox_files is None or len(bbox_files) == 1:
@@ -312,7 +315,7 @@ def visualize_bboxes(
         images = [None] * len(iterator)
     assert len(images) == len(iterator) == len(predictions), "Lenghts do not match"
     if len(images) == 0:
-        warnings.warn("No images to plot - iterator empty")
+        warnings.warn("No images to plot - iterator empty", stacklevel=2)
     for bboxes_file, image, pred in zip(iterator, images, predictions):
         DEBUG and print(bboxes_file)
         target = os.path.split(bboxes_file)[1]  # filename.csv
@@ -362,7 +365,7 @@ def visualize_bboxes(
                     #              (int(row['right']), int(row['bottom'])), color, thickness=3)
                     # cv2.circle(image, (int(row['stem_x']), int(row['stem_y'])), 15, color, thickness=2)
                     make_label_box(
-                        trueimage,
+                        trueimage,  # pyright: ignore[reportPossiblyUnboundVariable]
                         (int(row["left"]), int(row["top"]), int(row["right"]), int(row["bottom"])),
                         text=cnw_dataset.get_label_name(label_id),
                         color=color,
@@ -447,7 +450,7 @@ def visualize_bboxes(
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if save_to_disk:
-            cv2.imwrite(os.path.join(visualizations_dir, f"{target}.jpg"), image)
+            cv2.imwrite(os.path.join(visualizations_dir, f"{target}.jpg"), image)  # pyright: ignore[reportPossiblyUnboundVariable]
         # written_images.append(os.path.join(visualizations_dir, f'{target}.jpg'))
         written_images.append(image)
         # return written_images

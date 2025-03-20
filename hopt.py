@@ -1,24 +1,29 @@
+import os
+import warnings
+
+# TODO: acquire these from a trial_settings.json
+from collections import namedtuple
+from copy import deepcopy
+from typing import Union
+
+import optuna
+import torch
+from optuna.distributions import CategoricalDistribution, FloatDistribution, IntDistribution
+from optuna.integration import PyTorchLightningPruningCallback as PruningCallback
+from optuna.pruners import MedianPruner, PatientPruner, PercentilePruner
+from optuna.samplers import PartialFixedSampler
+from optuna.trial import FrozenTrial, TrialState
+from pytorch_lightning.callbacks import Callback, LearningRateMonitor
+from pytorch_lightning.loggers import TensorBoardLogger
+
+import train_experiments
 from model import *
 from train import *
 
-import optuna
-from optuna.integration import PyTorchLightningPruningCallback as PruningCallback
-
 print("Optuna Version", optuna.__version__)
 
-from optuna.pruners import MedianPruner, PercentilePruner, PatientPruner
-from optuna.samplers import PartialFixedSampler
-from optuna.trial import FrozenTrial, TrialState
-from optuna.distributions import FloatDistribution, IntDistribution, CategoricalDistribution
-import datetime
-from copy import deepcopy
 
-
-from pytorch_lightning.callbacks import Callback
-
-# NOTE: The builtin is currently not compatible with pytorch-lightning
-
-
+# NOTE: The builtin Callback is currently not compatible with pytorch-lightning
 class PyTorchLightningPruningCallback(Callback):
     """
     # Code taken from: https://github.com/optuna/optuna-examples/issues/166#issuecomment-1403112861
@@ -61,18 +66,15 @@ class PyTorchLightningPruningCallback(Callback):
                 "The metric '{}' is not in the evaluation logs for pruning. "
                 "Please make sure you set the correct metric name.".format(self.monitor)
             )
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
             return
 
-        self._trial.report(current_score, step=epoch)
+        self._trial.report(current_score.item(), step=epoch)
         print(format(epoch, ">3"), " : Validation mAP:", format(current_score, ".3f"))
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
 
-
-# TODO: aquire these from a trial_settings.json
-from collections import namedtuple
 
 HParamInt = namedtuple("HParamInt", "name, low, high, log, step", defaults={"log": False, "step": 1}.values())
 HParamFloat = namedtuple("HParamFloat", "name, low, high, log, step", defaults={"log": False, "step": None}.values())
@@ -213,7 +215,7 @@ def optimize():
     # prevent pruning of trials that look good at thes start but make one mistake
     patient_percentile = PatientPruner(percentile_pruner, patience=2, min_delta=0.02)  # at least increase by 2%
 
-    storage_url = f"sqlite:///" + OPTUNA_DB_PATH
+    storage_url = "sqlite:///" + OPTUNA_DB_PATH
     study_name = (
         "cyclelr_"
         + settings["model"]["name"]
@@ -240,10 +242,10 @@ def optimize():
     # edgcase trials could be very bad, should be tested after n_startup_trials
     # so pruning them can happen
 
-    if default_parameters:
-        study.enqueue_trial(default_parameters, skip_if_exists=True)
-    if recommended_parameters:
-        for sample in recommended_parameters:
+    if PRESETS["onecycle"]["default_parameters"]:
+        study.enqueue_trial(PRESETS["onecycle"]["default_parameters"], skip_if_exists=True)
+    if PRESETS["onecycle"]["recommended_parameters"]:
+        for sample in PRESETS["onecycle"]["recommended_parameters"]:
             study.enqueue_trial(sample, skip_if_exists=True)
 
     def objective(trial):
@@ -274,10 +276,10 @@ def optimize():
 
         ######## Callbacks
 
-        lr_monitor = pl.callbacks.LearningRateMonitor(logging_interval="epoch")
+        lr_monitor = LearningRateMonitor(logging_interval="epoch")
 
-        tensor_logger = pl.loggers.TensorBoardLogger(
-            "./lightning_logs/" + DATASET,
+        tensor_logger = TensorBoardLogger(
+            "./lightning_logs/" + trial_settings["dataset"]["name"],
             name=f"Trial-{trial_settings['model']['name']}_" + str(IMAGE_SIZE[0]) + "px_"
             f"lr={trial_settings['optimizer']['learning_rate']:.2g}"
             # f"warmup=({trial_settings['lr_scheduler']['warmup_epochs']},{trial_settings['lr_scheduler']['warmup_multiplier']:.2g})",
@@ -298,11 +300,14 @@ def optimize():
             num_sanity_val_steps=0,
             strategy=trial_trainer_settings["strategy"],
         )
+
+        no_transform, augmentation_pipeline = train_experiments.make_augmentations(settings)
         data = CropAndWeedDataModule(
-            DATASET,
+            trial_settings["dataset"]["name"],
             DATA_PATH,
             batch_size=batch_size,
-            num_workers=NUM_WORKERS,
+            image_size=trial_settings["dataset"]["image_size"],
+            num_workers=trial_settings["dataset"]["num_workers"],
             train_transform=augmentation_pipeline,
             test_transform=no_transform,
             stack2_images=True,
@@ -312,12 +317,12 @@ def optimize():
         model = YOLO_PL(trial_settings)
         try:
             trainer.fit(model, data)
-        except Exception as e:
-            print(e)
-            raise
         except optuna.exceptions.TrialPruned as e:
             trial.set_user_attr("end_epoch", trainer.current_epoch)
             raise e
+        except Exception as e:
+            print(e)
+            raise
 
         return trainer.callback_metrics["map"].item()
 

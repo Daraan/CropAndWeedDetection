@@ -71,7 +71,6 @@
 			"train_micro_batch_size_per_gpu" : "batch_size",
 			"zero_optimization": {
 				"stage": 2,
-				"offload_optimizer": true,
 				"allgather_bucket_size": 5e8,
 				"reduce_bucket_size": 5e8,
 				"offload_optimizer": {

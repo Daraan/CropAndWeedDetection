@@ -1,13 +1,23 @@
-import sys
-import os
+"""
+Executing this files iterates over all settings in the ./experiments folder and trains the models.
+
+Depending on the setting training can be resumed from a checkpoint
+"""
+
+# ruff: noqa: E402
+
 import argparse
-import time
 import json
-import warnings
+import logging
+import os
+from pprint import pprint
+from typing import TYPE_CHECKING, List, Optional
+
+from typing_extensions import deprecated
+
 import utils
 
-from pprint import pprint
-
+# isort: off
 print("loading torch...", end="\r")
 import torch
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
@@ -17,9 +27,19 @@ print("imported torch", end="\r")
 
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import GradientAccumulationScheduler, EarlyStopping
-from pytorch_lightning.strategies import DeepSpeedStrategy
+from pytorch_lightning.callbacks import (
+    GradientAccumulationScheduler,
+    EarlyStopping,
+    ModelCheckpoint,
+    LearningRateMonitor,
+)
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.strategies import DeepSpeedStrategy  # pyright: ignore[reportPrivateImportUsage]
+
 # from deepspeed.ops.adam import DeepSpeedCPUAdam
+if TYPE_CHECKING:
+    from pytorch_lightning.callbacks.callback import Callback
+
 
 SEED = 4222
 pl.seed_everything(SEED)
@@ -35,6 +55,7 @@ from model import YOLO_PL
 from model import CropAndWeedDataModule
 from model import BBOX_PARAMS, DATASETS
 
+logger = logging.getLogger(__name__)
 
 # Path were the downloaded files images, segmentation masks, ... will be
 if os.getcwd().startswith("/ceph") or os.getcwd().startswith("/pfs"):  # dws or bw server
@@ -59,7 +80,7 @@ def parse_arguments():
     return args
 
 
-def create_trainer(settings, logging=True, logname=None):
+def create_trainer(settings, logging: bool = True, logname: Optional[str] = None):
     BATCH_SIZE = settings["dataset"]["batch_size"]
     MAX_EPOCHS = settings["trainer"]["max_epochs"]
     IMAGE_SIZE = settings["dataset"]["image_size"]
@@ -77,20 +98,20 @@ def create_trainer(settings, logging=True, logname=None):
             + str(BATCH_SIZE)
             + "_{val_loss:.3f}_{map:.3f}"
         )
-        checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        checkpoint_callback = ModelCheckpoint(
             # =1,
             # dirpath=MODEL_PATH, # -> will be on logger path if None
-            filename=(logname + "{map:.3f}") or filename,
+            filename=(logname + "{map:.3f}") if logname else filename,
             monitor="map",
             mode="max",
-            verbose=1,
+            verbose=1,  # type: ignore[arg-type]
             save_last=False,
         )
-        checkpoint_callback.CHECKPOINT_NAME_LAST = filename + "-last"
+        checkpoint_callback.CHECKPOINT_NAME_LAST = filename + "-last"  # type: ignore[assignment]
 
-        lr_monitor = pl.callbacks.LearningRateMonitor(logging_interval="epoch")
+        lr_monitor = LearningRateMonitor(logging_interval="epoch")
 
-        tensor_logger = pl.loggers.TensorBoardLogger(
+        tensor_logger = TensorBoardLogger(
             "./lightning_logs/experiments",
             name=logname
             or settings["dataset"]["name"]
@@ -104,7 +125,7 @@ def create_trainer(settings, logging=True, logname=None):
             log_graph=False,
         )
 
-        callbacks = [checkpoint_callback]
+        callbacks: List["Callback"] = [checkpoint_callback]
     else:
         callbacks = []
 
@@ -117,11 +138,11 @@ def create_trainer(settings, logging=True, logname=None):
             "train_micro_batch_size_per_gpu": BATCH_SIZE,
             "zero_optimization": {
                 "stage": 2,  # Enable Stage 2 ZeRO (Optimizer/Gradient state partitioning)
-                "offload_optimizer": True,  # Enable Offloading optimizer state/calculation to the host CPU
                 "contiguous_gradients": True,  # Reduce gradient fragmentation. Usefull on larger models
                 # "overlap_comm": True,  # Overlap reduce/backward operation of gradients for speed. When training across multiple GPUs/machines.
                 "allgather_bucket_size": 5e8,  # Number of elements to all gather at once.
                 "reduce_bucket_size": 5e8,  # Number of elements we reduce/allreduce at once.
+                # "offload_optimizer": True,  # Enable Offloading optimizer state/calculation to the host CPU
                 "offload_optimizer": {
                     "device": "cpu",
                     "pin_memory": True,
@@ -167,7 +188,7 @@ def create_trainer(settings, logging=True, logname=None):
         accelerator="auto",
         devices=1 if torch.cuda.is_available() else 1,  # limiting got iPython runs
         callbacks=callbacks,
-        logger=[tensor_logger] if logging else [],  # add fit_logger
+        logger=[tensor_logger] if logging else [],  # add fit_logger  # pyright: ignore[reportPossiblyUnboundVariable]
         fast_dev_run=False,  # DEBUG
         precision=settings["trainer"]["precision"],
         strategy=strategy,
@@ -190,13 +211,12 @@ def make_model(settings):
     this function allows to load various preloaded weight types,
     even when the input layer or detection heads are incompatible.
     """
-
     # Setup / load model
     if settings["model"].get("weight_path", None):
+        load_path = os.path.join(MODEL_PATH, settings["model"]["weight_path"])
         try:
-            load_path = os.path.join(MODEL_PATH, settings["model"]["weight_path"])
             try:
-                pl_model = YOLO_PL.load_from_checkpoint(load_path, settings=settings)
+                pl_model: YOLO_PL = YOLO_PL.load_from_checkpoint(load_path, settings=settings)
             except FileNotFoundError:  # check absolute path or local path
                 load_path = settings["model"]["weight_path"]
                 pl_model = YOLO_PL.load_from_checkpoint(load_path, settings=settings)
@@ -206,7 +226,10 @@ def make_model(settings):
 
             load_state_dict_from_zero_checkpoint(pl_model, load_path, tag=None)
             # pl_model.load_state_dict(torch.load(path2))
-        except RuntimeError as e:  # Assuming wrong projection head -> load all other weights
+        except FileNotFoundError as e:
+            logger.error("No checkpoint found for %s", settings["model"]["weight_path"])
+            raise e from None
+        except RuntimeError:  # Assuming wrong projection head -> load all other weights
             pl_model = YOLO_PL(settings)
             # Create the 2nd model weights explicitly
             from copy import deepcopy
@@ -219,10 +242,11 @@ def make_model(settings):
             model2 = YOLO_PL.load_from_checkpoint(load_path, settings=settings2)
 
             # Transfer the weights
+            c, c2 = None, None
             for c, c2 in zip(pl_model.model.model.children(), model2.model.model.children()):
                 try:
                     c.load_state_dict(c2.state_dict())
-                except RuntimeError as e:
+                except RuntimeError as e:  # noqa: PERF203
                     print(e.args[0].split("\n")[0])
                     print("If above Error is for detection head then this is fine")
             print("Loaded weights expect the detection head.")
@@ -281,10 +305,10 @@ def make_augmentations(settings):
                         [
                             A.ColorJitter(
                                 p=1.0,
-                                brightness=(0.6, 1.4),
-                                contrast=(0.8, 1.2),
-                                saturation=(0.7, 1.3),
-                                hue=(-0.015, 0.015),
+                                brightness=(0.6, 1.4),  # type: ignore[arg-type]
+                                contrast=(0.8, 1.2),  # type: ignore[arg-type]
+                                saturation=(0.7, 1.3),  # type: ignore[arg-type]
+                                hue=(-0.015, 0.015),  # type: ignore[arg-type]
                             ),
                             # A.InvertImg(p=0.2)
                         ],
@@ -313,10 +337,7 @@ def make_augmentations(settings):
     return no_transform, augmentation_pipeline
 
 
-from copy import deepcopy
-
-
-def strict_on_validation_epoch_end(self):
+def strict_on_validation_epoch_end(self: YOLO_PL):
     # print("computing map-val", self.current_epoch)
 
     for mAP, prefix in zip([self.mAP, False], ["", "val_"]):
@@ -333,14 +354,14 @@ def strict_on_validation_epoch_end(self):
             strict_valmAP.groundtruths = self.mAP.groundtruths
             strict_valmAP.groundtruth_labels = self.mAP.groundtruth_labels
             mAP = strict_valmAP
-        results = mAP.compute()
+        results = mAP.compute()  # type: ignore
 
         map_per_class = results.pop("map_per_class")
         mar_per_class = results.pop("mar_100_per_class")
 
         self.log("hp_metric", results["map"], sync_dist=True)
         self.log(prefix + "map", results.pop("map"), prog_bar=True, sync_dist=True)
-        if mAP.class_metrics:
+        if mAP.class_metrics:  # type: ignore[attr-defined]
             # Not one element tensors
             names = list(map(DATASETS[self.settings["dataset"]["name"]].get_label_name, self.mAP._get_classes()))
             for i, name in enumerate(names):
@@ -431,8 +452,8 @@ def train(settings=None, logname=None):
     if settings["trainer"]["ckpt_path"]:
         try:
             trainer.fit(pl_model, data, ckpt_path=settings["trainer"]["ckpt_path"])
-        except Exception as e:
-            raise
+        except Exception as e:  # noqa: TRY203
+            raise  # comment if you want to skip exceptions
             print(e, "\n", "Training without loading checkpoint")
             trainer.fit(pl_model, data)
     else:
@@ -456,6 +477,7 @@ def train(settings=None, logname=None):
         YOLO_PL.on_validation_epoch_end = standard_eval
 
 
+@deprecated("not longer used")
 def _experiments_present(file):
     for file in os.listdir("experiments"):
         print("Checking", file)
@@ -465,13 +487,13 @@ def _experiments_present(file):
         for dir in os.listdir(os.path.join(".", "lightning_logs", "experiments")):
             if not dir.startswith("settings"):
                 pass
+    return None
 
 
 if __name__ == "__main__":
     standard_eval = YOLO_PL.on_validation_epoch_end
     YOLO_PL.on_validation_epoch_end = strict_on_validation_epoch_end
     args = parse_arguments()
-    args.settings_dir
     for file in os.listdir(args.settings_dir):
         print("Checking", file)
         if os.path.exists(os.path.join(".", "lightning_logs", "experiments", os.path.splitext(file)[0])):
@@ -484,4 +506,7 @@ if __name__ == "__main__":
 
         with open(os.path.join(args.settings_dir, file), "r") as f:
             settings = json.load(f)
-        train(settings, logname=os.path.splitext(file)[0])
+        try:
+            train(settings, logname=os.path.splitext(file)[0])
+        except Exception as e:  # noqa: BLE001
+            print(f"Error training with settings from {file}: {e}")

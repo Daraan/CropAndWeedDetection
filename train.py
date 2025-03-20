@@ -1,8 +1,13 @@
+"""
+NOTE: This file is deprecated use train_experiments.py instead
+"""
+
 import sys
 import os
 import argparse
 import time
 import json
+from typing import Any, Optional
 import warnings
 from pprint import pprint
 
@@ -280,10 +285,10 @@ def make_augmentations(settings):
                         [
                             A.ColorJitter(
                                 p=1.0,
-                                brightness=(0.6, 1.4),
-                                contrast=(0.8, 1.2),
-                                saturation=(0.7, 1.3),
-                                hue=(-0.015, 0.015),
+                                brightness=(0.6, 1.4),  # type: ignore[arg-type] # tuple ok
+                                contrast=(0.8, 1.2),  # type: ignore[arg-type] # tuple ok
+                                saturation=(0.7, 1.3),  # type: ignore[arg-type] # tuple ok
+                                hue=(-0.015, 0.015),  # type: ignore[arg-type] # tuple ok
                             ),
                             # A.InvertImg(p=0.2)
                         ],
@@ -307,16 +312,22 @@ def make_augmentations(settings):
     return no_transform, augmentation_pipeline
 
 
-def test(trainer=None, checkpoint=None, model=None, data=None):
+def test(
+    trainer: Optional[Trainer] = None,
+    checkpoint: Optional[str] = None,
+    model: Optional[Any] = None,
+    data: Optional[Any] = None,
+):
     if trainer is not None and model is not None and data is not None:
-        return pprint(trainer.test(pl_model, data))
+        pprint(trainer.test(model, data))
+        return
     assert checkpoint, "No checkpoint file provided"
     args = parse_arguments()
     pprint(args)
     with open(args.settings, "r") as f:
         settings = json.load(f)
     if trainer is None:
-        trainer = create_trainer(settings)
+        trainer = create_trainer(settings, args, logging=not args.no_log)
     no_transform, augmentation_pipeline = make_augmentations(settings)
     data = CropAndWeedDataModule(
         settings["dataset"]["name"],
