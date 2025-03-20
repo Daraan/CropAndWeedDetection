@@ -51,8 +51,10 @@ python3.9 -m pip install -U pip --no-cache-dir --force-reinstall
 IMPORANT for WINDOWS users :
 Do not install the [cropandweed-dataset](https://github.com/cropandweed/cropandweed-dataset) and [Yolov7-training](https://github.com/Chris-hughes10/Yolov7-training) via `pip`, use the cloned repositories provided through the submodule.
 
+You can install the module with `pip install -e cropandweed-dataset/` from the provided submodule which points to my [fork](https://github.com/Daraan/cropandweed-dataset).
+
 [PyTorch-Accelerated:](https://github.com/Chris-hughes10/pytorch-accelerated) is integrated into the YOLOv7 code but not directly used.
-It is not so well maintained and might downgraded you to a PyTorch version < 2, this installation command prevents the downgrade:
+It is not so well maintained and might downgrade you to a PyTorch version < 2, this installation command prevents the downgrade:
 
 ```sh
 pip install pytorch-accelerated==0.1.40 --no-dependencies  
