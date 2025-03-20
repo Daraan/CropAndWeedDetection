@@ -1,3 +1,6 @@
+[project]
+requires-python = ">=3.9"
+
 [tool.black]
 line-length = 120
 target-version = ['py39', 'py310', 'py311']
@@ -52,7 +55,6 @@ select = [
 
   "PYI",
   #"PTH",  # Pathlib
-  "FIX",  # todo, xxx, fixme
 
   #"ERA",  # commented out code
 
@@ -71,10 +73,12 @@ select = [
 ignore = [
   "D203", "D205",
   "RET504",  # assignment before return
+  "RET505",  # return with if-else
   "RUF100",  # Unused noqa
   "SIM108",  # Use ternary assignments instead of if blocks
   "N806", "N812",  # Uppercase variables
   "PLR09",  #  Too many
+  "PLR2004", # magic constant values
 
   "TRY003", "TRY400",  # To long error messages, use logging.exception over error
 
