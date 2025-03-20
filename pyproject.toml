@@ -1,0 +1,112 @@
+[tool.black]
+line-length = 120
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+  "ARG",
+  "RUF",
+  "E",
+  "F",
+  "W",
+  "N",
+  "PIE",
+  "D20",
+  "BLE",
+  "FBT",
+  "B",
+  "COM818",
+  "C4",
+  "T100",
+  "FA102",
+  "ISC",  # Implicit String Concat
+  "ICN",  # Import Conventions
+  "LOG",  # logging
+  "G",    # Log formatting
+  "Q003", "Q004",
+  "RET",
+  # SLF   # Private member access
+  "SLOT", # Reduce memory when using __slots__
+  "TID",  # relative | slow imports
+  "TC",
+
+  "PERF",
+  "FURB",
+
+  "PYI",
+  #"PTH",  # Pathlib
+  "FIX",  # todo, xxx, fixme
+
+  #"ERA",  # commented out code
+
+  "PD",  # Pandas
+  "NPY",  # numpy
+  # -- Pylint --
+  "PLW", 
+  "PLE",
+  "PLC",
+  "PLR",
+  "PLR0402", # import A.B as B; from A import B
+  "PLR2044",  # empty comment
+
+  "TRY",
+]
+ignore = [
+  "D203", "D205",
+  "RET504",  # assignment before return
+  "RUF100",  # Unused noqa
+  "SIM108",  # Use ternary assignments instead of if blocks
+  "N806", "N812",  # Uppercase variables
+  "PLR09",  #  Too many
+
+  "TRY003", "TRY400",  # To long error messages, use logging.exception over error
+
+  "PD901",   # Use generic df as DataFrame variable
+  "NPY002",  # Use random generator
+]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".tox",
+    ".venv",
+    "build",
+    "dist",
+    "sc[2_]*",  # ignore StarCraft files
+]
+
+[tool.ruff.format]
+  docstring-code-format = true
+  exclude = [
+    ".git",
+]
+
+[tool.ruff.lint.isort]
+force-single-line = false  # default: false
+
+
+[tool.isort]
+split_on_trailing_comma = true
+include_trailing_comma = true
+profile = "black"
+
+[tool.pyright]
+reportDeprecated = "warning"
+reportUnnecessaryComparison = "warning"
+reportUnnecessaryCast = "warning"
