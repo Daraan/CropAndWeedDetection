@@ -494,11 +494,17 @@ if __name__ == "__main__":
     standard_eval = YOLO_PL.on_validation_epoch_end
     YOLO_PL.on_validation_epoch_end = strict_on_validation_epoch_end
     args = parse_arguments()
+    training_runs = 0
     for file in os.listdir(args.settings_dir):
         print("Checking", file)
-        if os.path.exists(os.path.join(".", "lightning_logs", "experiments", os.path.splitext(file)[0])):
-            print("path exists", os.path.join("lightning_logs", "experiments", file))
-            continue
+        # Do not retrain if we already trained it:
+        output_dir = os.path.join(".", "lightning_logs", "experiments", os.path.splitext(file)[0])
+        if os.path.exists(output_dir):
+            # are there any files?
+            if sum([len(files) for _, _, files in os.walk(output_dir)]):
+                print("Outputs already exists for", os.path.join("lightning_logs", "experiments", file), "Skipping")
+                continue
+        # Special run comparing differently sized models
         if os.path.exists(os.path.join(".", "lightning_logs", "experiments", "size", os.path.splitext(file)[0])):
             continue
 
@@ -510,3 +516,7 @@ if __name__ == "__main__":
             train(settings, logname=os.path.splitext(file)[0])
         except Exception as e:  # noqa: BLE001
             print(f"Error training with settings from {file}: {e}")
+        training_runs += 1
+    if not training_runs:
+        print("\nNo new experiments were run, place a new settings file in the experiments folder "
+              "or clean failed runs.")

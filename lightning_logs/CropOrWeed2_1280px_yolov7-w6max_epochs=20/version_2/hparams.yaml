@@ -45,7 +45,7 @@ settings:
     name: SGD
     weight_decay: 0.0005
   trainer:
-    ckpt_path: CropOrWeed2_1280px_yolov7-w6_epoch=3_lr=_batch=16_val_loss=16.028_map=0.320.ckpt
+    ckpt_path: false,
     deepspeed_config:
       train_batch_size: batch_size
       train_micro_batch_size_per_gpu: batch_size

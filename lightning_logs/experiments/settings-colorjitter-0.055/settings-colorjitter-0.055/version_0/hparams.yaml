@@ -50,7 +50,7 @@ settings:
   trainer:
     accumulate_grad_batches: 1
     check_val_every_n_epoch: 1
-    ckpt_path: /pfs/data5/home/ma/ma_ma/ma_dsperber/CropAndWeedDetection/lightning_logs/experiments/settings-colorjitter-0.055/version_0/checkpoints/settings-colorjitter-0.055map=0.399.ckpt
+    ckpt_path: lightning_logs/experiments/settings-colorjitter-0.055/version_0/checkpoints/settings-colorjitter-0.055map=0.399.ckpt
     deepspeed_config:
       train_batch_size: batch_size
       train_micro_batch_size_per_gpu: batch_size

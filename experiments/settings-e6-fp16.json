@@ -60,7 +60,7 @@
 		"accumulate_grad_batches": 2,
 		"check_val_every_n_epoch" : 2, 
 		"val_check_interval" : false,
-		"ckpt_path" : "CropAndWeedDetection/models/CropsOrWeed9_1280px_yolov7-e6_epoch=9_lr=_batch=8_val_loss=3.971_map=0.167-last.ckpt",
+		"ckpt_path" : false,
 		"disable_val_sanity_checks" : true,
 		"deepspeed_config" : {
 			"zero_allow_untested_optimizer": true,
